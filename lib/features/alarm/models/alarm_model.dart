@@ -10,17 +10,19 @@ class AlarmModel {
   final bool vibrate;
   final String sound;
   final int snoozeMinutes;
+  final String mission; // 'none', 'math', 'shake', 'memory'
 
   const AlarmModel({
     required this.id,
     required this.hour,
     required this.minute,
-    this.label = 'Alarme',
+    this.label = 'Alarme Aurora',
     this.isEnabled = true,
     this.repeatDays = const [],
     this.vibrate = true,
-    this.sound = 'aurora_glow.mp3',
+    this.sound = 'Aurora Celestial',
     this.snoozeMinutes = 5,
+    this.mission = 'none',
   });
 
   TimeOfDay get timeOfDay => TimeOfDay(hour: hour, minute: minute);
@@ -35,6 +37,7 @@ class AlarmModel {
     bool? vibrate,
     String? sound,
     int? snoozeMinutes,
+    String? mission,
   }) {
     return AlarmModel(
       id: id ?? this.id,
@@ -46,6 +49,7 @@ class AlarmModel {
       vibrate: vibrate ?? this.vibrate,
       sound: sound ?? this.sound,
       snoozeMinutes: snoozeMinutes ?? this.snoozeMinutes,
+      mission: mission ?? this.mission,
     );
   }
 
@@ -60,6 +64,7 @@ class AlarmModel {
       'vibrate': vibrate,
       'sound': sound,
       'snoozeMinutes': snoozeMinutes,
+      'mission': mission,
     };
   }
 
@@ -68,15 +73,16 @@ class AlarmModel {
       id: json['id'] as int,
       hour: json['hour'] as int,
       minute: json['minute'] as int,
-      label: json['label'] as String? ?? 'Alarme',
+      label: json['label'] as String? ?? 'Alarme Aurora',
       isEnabled: json['isEnabled'] as bool? ?? true,
       repeatDays: (json['repeatDays'] as List<dynamic>?)
               ?.map((e) => e as int)
               .toList() ??
           [],
       vibrate: json['vibrate'] as bool? ?? true,
-      sound: json['sound'] as String? ?? 'aurora_glow.mp3',
+      sound: json['sound'] as String? ?? 'Aurora Celestial',
       snoozeMinutes: json['snoozeMinutes'] as int? ?? 5,
+      mission: json['mission'] as String? ?? 'none',
     );
   }
 }
