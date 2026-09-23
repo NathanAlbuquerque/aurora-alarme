@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer' as developer;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../constants/app_constants.dart';
@@ -8,6 +9,9 @@ class NotificationService {
 
   final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
+
+  final StreamController<String?> onNotificationPayload =
+      StreamController<String?>.broadcast();
 
   bool _initialized = false;
 
@@ -32,9 +36,10 @@ class NotificationService {
       settings: initializationSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) {
         developer.log(
-          'Notification tapped with payload: ${response.payload}',
+          'Notification action tapped: ${response.actionId}, payload: ${response.payload}',
           name: 'NotificationService',
         );
+        onNotificationPayload.add(response.payload);
       },
     );
 
@@ -52,12 +57,26 @@ class NotificationService {
         playSound: true,
         enableVibration: true,
         showBadge: true,
+        audioAttributesUsage: AudioAttributesUsage.alarm,
       );
 
       await androidNotificationPlugin.createNotificationChannel(channel);
     }
 
     _initialized = true;
+  }
+
+  Future<String?> getInitialPayload() async {
+    try {
+      final details =
+          await _notificationsPlugin.getNotificationAppLaunchDetails();
+      if (details != null && details.didNotificationLaunchApp) {
+        return details.notificationResponse?.payload;
+      }
+    } catch (e) {
+      developer.log('getInitialPayload note: $e', name: 'NotificationService');
+    }
+    return null;
   }
 
   Future<bool?> requestPermissions() async {
@@ -88,6 +107,21 @@ class NotificationService {
       visibility: NotificationVisibility.public,
       ongoing: true,
       autoCancel: false,
+      audioAttributesUsage: AudioAttributesUsage.alarm,
+      actions: <AndroidNotificationAction>[
+        AndroidNotificationAction(
+          'dismiss',
+          'Desligar',
+          showsUserInterface: true,
+          cancelNotification: true,
+        ),
+        AndroidNotificationAction(
+          'snooze',
+          'Soneca (+5m)',
+          showsUserInterface: true,
+          cancelNotification: true,
+        ),
+      ],
     );
 
     const notificationDetails = NotificationDetails(
