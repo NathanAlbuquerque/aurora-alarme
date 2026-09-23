@@ -1,56 +1,74 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
+import 'app_typography.dart';
 
+/// Aurora Alarm Complete Material 3 Theme (Light & Dark)
 class AppTheme {
-  // Dark Theme (Default for Nightstand & Alarm experience)
+  static const double cardRadius = 28.0;
+  static const double buttonRadius = 24.0;
+  static const double dialogRadius = 32.0;
+
+  // ===========================================================================
+  // 🌙 DARK THEME (The Hero Aurora Night Experience)
+  // ===========================================================================
   static ThemeData get darkTheme {
-    final baseTextTheme = GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme);
+    final textTheme = AppTypography.createTextTheme(brightness: Brightness.dark);
+
+    const darkColorScheme = ColorScheme.dark(
+      primary: AppColors.neonCyan,
+      onPrimary: Color(0xFF022922),
+      primaryContainer: Color(0xFF064E43),
+      onPrimaryContainer: AppColors.neonCyan,
+      secondary: AppColors.neonPink,
+      onSecondary: Colors.white,
+      secondaryContainer: Color(0xFF5B002E),
+      onSecondaryContainer: AppColors.pastelPink,
+      tertiary: AppColors.neonYellow,
+      onTertiary: Color(0xFF262000),
+      tertiaryContainer: Color(0xFF4D4000),
+      onTertiaryContainer: AppColors.pastelButter,
+      surface: AppColors.darkSurface,
+      onSurface: AppColors.darkTextPrimary,
+      surfaceContainerHighest: AppColors.darkSurfaceElevated,
+      error: Color(0xFFFF3366),
+      onError: Colors.white,
+      outline: AppColors.darkBorder,
+      outlineVariant: Color(0xFF2E3966),
+    );
 
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      scaffoldBackgroundColor: AppColors.darkBackground,
-      colorScheme: const ColorScheme.dark(
-        primary: AppColors.neonCyan,
-        onPrimary: Color(0xFF032B25),
-        primaryContainer: Color(0xFF074840),
-        onPrimaryContainer: AppColors.neonCyan,
-        secondary: AppColors.cosmicMagenta,
-        onSecondary: Colors.white,
-        secondaryContainer: Color(0xFF5B0033),
-        onSecondaryContainer: Color(0xFFFFD8E6),
-        tertiary: AppColors.electricBlue,
-        onTertiary: Colors.black,
-        surface: AppColors.darkSurface,
-        onSurface: AppColors.darkTextPrimary,
-        error: Color(0xFFFF5252),
-        onError: Colors.white,
-      ),
-      textTheme: baseTextTheme.apply(
-        bodyColor: AppColors.darkTextPrimary,
-        displayColor: AppColors.darkTextPrimary,
-      ),
+      colorScheme: darkColorScheme,
+      scaffoldBackgroundColor: AppColors.darkVoid,
+      textTheme: textTheme,
+
+      // App Bar Theme
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        centerTitle: false,
         scrolledUnderElevation: 0,
+        centerTitle: false,
         iconTheme: IconThemeData(color: AppColors.darkTextPrimary),
         titleTextStyle: TextStyle(
           fontSize: 24,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.5,
           color: AppColors.darkTextPrimary,
         ),
       ),
+
+      // Card Theme (Big 28px rounded corners)
       cardTheme: CardThemeData(
         color: AppColors.darkSurface,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-          side: const BorderSide(color: AppColors.darkBorder, width: 1),
+          borderRadius: BorderRadius.circular(cardRadius),
+          side: const BorderSide(color: AppColors.darkBorder, width: 1.5),
         ),
       ),
+
+      // Switch Theme (Neon Cyan Glowing Active State)
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
@@ -60,94 +78,215 @@ class AppTheme {
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return AppColors.neonCyan.withAlpha(60);
+            return AppColors.neonCyan.withAlpha(50);
           }
           return AppColors.darkSurfaceHighlight;
         }),
-        trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+        trackOutlineColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return AppColors.neonCyan.withAlpha(120);
+          }
+          return Colors.transparent;
+        }),
       ),
+
+      // Floating Action Button Theme
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: AppColors.neonCyan,
-        foregroundColor: const Color(0xFF062A24),
-        elevation: 8,
+        foregroundColor: const Color(0xFF03221C),
+        elevation: 12,
+        focusElevation: 16,
+        hoverElevation: 14,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(buttonRadius),
+        ),
+      ),
+
+      // Dialog & Bottom Sheet Themes (Curved 32-36px)
+      dialogTheme: DialogThemeData(
+        backgroundColor: AppColors.darkSurfaceElevated,
+        elevation: 16,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(dialogRadius),
+          side: const BorderSide(color: AppColors.darkBorder, width: 1.5),
+        ),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: AppColors.darkSurfaceElevated,
+        elevation: 20,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(36)),
+        ),
+      ),
+
+      // Time Picker Theme (Modern Neon Accented)
+      timePickerTheme: TimePickerThemeData(
+        backgroundColor: AppColors.darkSurface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(dialogRadius),
+          side: const BorderSide(color: AppColors.darkBorder, width: 1.5),
+        ),
+        hourMinuteColor: AppColors.darkSurfaceElevated,
+        hourMinuteTextColor: AppColors.neonCyan,
+        dialBackgroundColor: AppColors.darkSurfaceElevated,
+        dialHandColor: AppColors.neonCyan,
+        dialTextColor: AppColors.darkTextPrimary,
+        entryModeIconColor: AppColors.neonCyan,
+      ),
+
+      // SnackBar Theme
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: AppColors.darkSurfaceElevated,
+        contentTextStyle: const TextStyle(
+          color: AppColors.darkTextPrimary,
+          fontWeight: FontWeight.w600,
+        ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: AppColors.darkBorder, width: 1),
         ),
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }
 
-  // Light Theme (Clean, Crisp, with Vibrant Accents)
+  // ===========================================================================
+  // ☀️ LIGHT THEME (Vibrant Frost Light Experience)
+  // ===========================================================================
   static ThemeData get lightTheme {
-    final baseTextTheme = GoogleFonts.outfitTextTheme(ThemeData.light().textTheme);
+    final textTheme = AppTypography.createTextTheme(brightness: Brightness.light);
+
+    const lightColorScheme = ColorScheme.light(
+      primary: Color(0xFF009688),
+      onPrimary: Colors.white,
+      primaryContainer: Color(0xFFD0F8F1),
+      onPrimaryContainer: Color(0xFF004D40),
+      secondary: Color(0xFFE0006C),
+      onSecondary: Colors.white,
+      secondaryContainer: Color(0xFFFFD9E8),
+      onSecondaryContainer: Color(0xFF5B002E),
+      tertiary: Color(0xFF7928CA),
+      onTertiary: Colors.white,
+      tertiaryContainer: Color(0xFFEEDDFF),
+      onTertiaryContainer: Color(0xFF2E0054),
+      surface: AppColors.lightSurface,
+      onSurface: AppColors.lightTextPrimary,
+      surfaceContainerHighest: AppColors.lightSurfaceElevated,
+      error: Color(0xFFDC2626),
+      onError: Colors.white,
+      outline: AppColors.lightBorder,
+      outlineVariant: Color(0xFFCBD5E1),
+    );
 
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
+      colorScheme: lightColorScheme,
       scaffoldBackgroundColor: AppColors.lightBackground,
-      colorScheme: const ColorScheme.light(
-        primary: Color(0xFF00897B),
-        onPrimary: Colors.white,
-        primaryContainer: Color(0xFFCCFBF1),
-        onPrimaryContainer: Color(0xFF004D40),
-        secondary: Color(0xFFD81B60),
-        onSecondary: Colors.white,
-        secondaryContainer: Color(0xFFFFD1E1),
-        onSecondaryContainer: Color(0xFF5A0023),
-        tertiary: Color(0xFF0284C7),
-        onTertiary: Colors.white,
-        surface: AppColors.lightSurface,
-        onSurface: AppColors.lightTextPrimary,
-        error: Color(0xFFDC2626),
-        onError: Colors.white,
-      ),
-      textTheme: baseTextTheme.apply(
-        bodyColor: AppColors.lightTextPrimary,
-        displayColor: AppColors.lightTextPrimary,
-      ),
+      textTheme: textTheme,
+
+      // App Bar Theme
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        centerTitle: false,
         scrolledUnderElevation: 0,
+        centerTitle: false,
         iconTheme: IconThemeData(color: AppColors.lightTextPrimary),
         titleTextStyle: TextStyle(
           fontSize: 24,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.5,
           color: AppColors.lightTextPrimary,
         ),
       ),
+
+      // Card Theme (Big 28px rounded corners)
       cardTheme: CardThemeData(
         color: AppColors.lightSurface,
-        elevation: 1,
-        shadowColor: Colors.black.withAlpha(15),
+        elevation: 2,
+        shadowColor: Colors.black.withAlpha(12),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-          side: const BorderSide(color: AppColors.lightBorder, width: 1),
+          borderRadius: BorderRadius.circular(cardRadius),
+          side: const BorderSide(color: AppColors.lightBorder, width: 1.5),
         ),
       ),
+
+      // Switch Theme
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return const Color(0xFF00897B);
+            return const Color(0xFF009688);
           }
           return Colors.white;
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return const Color(0xFF00897B).withAlpha(70);
+            return const Color(0xFF009688).withAlpha(50);
           }
           return const Color(0xFFCBD5E1);
         }),
-        trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+        trackOutlineColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const Color(0xFF009688);
+          }
+          return Colors.transparent;
+        }),
       ),
+
+      // Floating Action Button Theme
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: const Color(0xFF00897B),
+        backgroundColor: const Color(0xFF009688),
         foregroundColor: Colors.white,
-        elevation: 6,
+        elevation: 8,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(buttonRadius),
+        ),
+      ),
+
+      // Dialog & Bottom Sheet Themes (Curved 32-36px)
+      dialogTheme: DialogThemeData(
+        backgroundColor: AppColors.lightSurface,
+        elevation: 16,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(dialogRadius),
+          side: const BorderSide(color: AppColors.lightBorder, width: 1.5),
+        ),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: AppColors.lightSurface,
+        elevation: 16,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(36)),
+        ),
+      ),
+
+      // Time Picker Theme
+      timePickerTheme: TimePickerThemeData(
+        backgroundColor: AppColors.lightSurface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(dialogRadius),
+          side: const BorderSide(color: AppColors.lightBorder, width: 1.5),
+        ),
+        hourMinuteColor: AppColors.lightSurfaceElevated,
+        hourMinuteTextColor: const Color(0xFF009688),
+        dialBackgroundColor: AppColors.lightSurfaceElevated,
+        dialHandColor: const Color(0xFF009688),
+        dialTextColor: AppColors.lightTextPrimary,
+        entryModeIconColor: const Color(0xFF009688),
+      ),
+
+      // SnackBar Theme
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: AppColors.lightSurfaceElevated,
+        contentTextStyle: const TextStyle(
+          color: AppColors.lightTextPrimary,
+          fontWeight: FontWeight.w600,
+        ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: AppColors.lightBorder, width: 1),
         ),
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }
