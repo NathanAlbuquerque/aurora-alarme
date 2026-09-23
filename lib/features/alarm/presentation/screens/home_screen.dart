@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/theme_provider.dart';
 import '../../../../shared/utils/date_time_utils.dart';
@@ -15,6 +14,7 @@ import '../../providers/alarm_provider.dart';
 import '../widgets/alarm_card.dart';
 import '../widgets/aurora_clock_widget.dart';
 import '../widgets/empty_alarms_illustration.dart';
+import 'add_edit_alarm_screen.dart';
 
 /// Primary Flagship Screen for Aurora Alarm
 class HomeScreen extends ConsumerStatefulWidget {
@@ -33,51 +33,47 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
   }
 
-  Future<void> _handleAddNewAlarm() async {
+  void _handleAddNewAlarm() {
     HapticFeedback.lightImpact();
-    final pickedTime = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-      builder: (ctx, child) {
-        final isDark = Theme.of(ctx).brightness == Brightness.dark;
-        return Theme(
-          data: isDark ? AppTheme.darkTheme : AppTheme.lightTheme,
-          child: child!,
-        );
-      },
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, anim, secAnim) => const AddEditAlarmScreen(),
+        transitionsBuilder: (context, anim, secAnim, child) {
+          return FadeTransition(
+            opacity: anim,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 0.08),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
+              child: child,
+            ),
+          );
+        },
+      ),
     );
+  }
 
-    if (pickedTime != null && mounted) {
-      final newAlarm = AlarmModel(
-        id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-        hour: pickedTime.hour,
-        minute: pickedTime.minute,
-        label: 'Alarme Aurora',
-        isEnabled: true,
-        repeatDays: const [1, 2, 3, 4, 5],
-      );
-
-      await ref.read(alarmListProvider.notifier).addAlarm(newAlarm);
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.check_circle_rounded, color: AppColors.neonCyan),
-              const SizedBox(width: 12),
-              Text(
-                'Alarme definido para ${DateTimeUtils.formatTimeOfDay(pickedTime)}',
-                style: const TextStyle(fontWeight: FontWeight.w700),
-              ),
-            ],
-          ),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: AppColors.darkSurfaceElevated,
-        ),
-      );
-    }
+  void _handleEditAlarm(AlarmModel alarm) {
+    HapticFeedback.lightImpact();
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, anim, secAnim) =>
+            AddEditAlarmScreen(initialAlarm: alarm),
+        transitionsBuilder: (context, anim, secAnim, child) {
+          return FadeTransition(
+            opacity: anim,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 0.08),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
+              child: child,
+            ),
+          );
+        },
+      ),
+    );
   }
 
   void _handleToggleDay(AlarmModel alarm, int day) {
@@ -324,6 +320,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       key: ValueKey(alarm.id),
                       alarm: alarm,
                       index: index,
+                      onTap: () => _handleEditAlarm(alarm),
                       onToggle: (_) {
                         ref
                             .read(alarmListProvider.notifier)
