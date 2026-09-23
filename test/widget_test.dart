@@ -21,11 +21,12 @@ void main() {
     // Pump a duration to allow flutter_animate scheduled timers to run
     await tester.pump(const Duration(milliseconds: 500));
 
-    // Verify Aurora Alarm title and alarms section header are present
-    expect(find.text('Aurora Alarm'), findsOneWidget);
+    // Verify Aurora Alarm title and section header are present
+    expect(find.text('AURORA ALARM'), findsOneWidget);
     expect(find.text('Seus Alarmes'), findsOneWidget);
+    expect(find.text('NOVO ALARME'), findsOneWidget);
 
-    // Disposing the widget tree cancels timers in AuroraClockWidget
+    // Disposing the widget tree cancels timers in background and clock
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(milliseconds: 500));
   });

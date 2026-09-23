@@ -6,7 +6,7 @@ import 'core/services/alarm_service.dart';
 import 'core/services/notification_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
-import 'features/alarm/presentation/screens/alarm_list_screen.dart';
+import 'features/alarm/presentation/screens/home_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,7 +44,7 @@ class AuroraAlarmApp extends ConsumerWidget {
         Locale('pt', 'BR'),
         Locale('en', 'US'),
       ],
-      home: const AlarmListScreen(),
+      home: const HomeScreen(),
     );
   }
 }
