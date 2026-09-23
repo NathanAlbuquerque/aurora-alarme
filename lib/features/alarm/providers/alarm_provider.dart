@@ -95,23 +95,7 @@ class AlarmNotifier extends Notifier<List<AlarmModel>> {
   }
 
   void _scheduleAlarm(AlarmModel alarm) {
-    final now = DateTime.now();
-    var scheduledTime = DateTime(
-      now.year,
-      now.month,
-      now.day,
-      alarm.hour,
-      alarm.minute,
-    );
-
-    if (scheduledTime.isBefore(now)) {
-      scheduledTime = scheduledTime.add(const Duration(days: 1));
-    }
-
-    AlarmService.instance.scheduleExactAlarm(
-      id: alarm.id,
-      alarmTime: scheduledTime,
-    );
+    AlarmService.instance.scheduleAlarm(alarm);
   }
 }
 
