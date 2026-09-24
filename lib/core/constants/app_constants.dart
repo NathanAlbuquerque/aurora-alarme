@@ -3,10 +3,10 @@ class AppConstants {
   static const String appVersion = '1.0.0';
 
   // Notification Channels
-  static const String alarmNotificationChannelId = 'aurora_alarm_channel';
-  static const String alarmNotificationChannelName = 'Alarmes Aurora';
+  static const String alarmNotificationChannelId = 'aurora_alarm_channel_v2';
+  static const String alarmNotificationChannelName = 'Alarmes Aurora (Alta Prioridade)';
   static const String alarmNotificationChannelDesc =
-      'Canal de alta prioridade para disparo de alarmes e notificações';
+      'Canal de máxima prioridade para disparo de alarmes em tela cheia';
 
   // Storage Keys
   static const String keyThemeMode = 'aurora_theme_mode';

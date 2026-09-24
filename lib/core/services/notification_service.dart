@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:developer' as developer;
+import 'dart:typed_data';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../constants/app_constants.dart';
 
@@ -96,19 +97,21 @@ class NotificationService {
     required String body,
     String? payload,
   }) async {
-    const androidDetails = AndroidNotificationDetails(
+    final androidDetails = AndroidNotificationDetails(
       AppConstants.alarmNotificationChannelId,
       AppConstants.alarmNotificationChannelName,
       channelDescription: AppConstants.alarmNotificationChannelDesc,
+      channelAction: AndroidNotificationChannelAction.createIfNotExists,
       importance: Importance.max,
-      priority: Priority.high,
+      priority: Priority.max,
       fullScreenIntent: true,
       category: AndroidNotificationCategory.alarm,
       visibility: NotificationVisibility.public,
       ongoing: true,
       autoCancel: false,
       audioAttributesUsage: AudioAttributesUsage.alarm,
-      actions: <AndroidNotificationAction>[
+      additionalFlags: Int32List.fromList([4, 32]), // FLAG_INSISTENT (4), FLAG_NO_CLEAR (32)
+      actions: const <AndroidNotificationAction>[
         AndroidNotificationAction(
           'dismiss',
           'Desligar',
@@ -124,7 +127,7 @@ class NotificationService {
       ],
     );
 
-    const notificationDetails = NotificationDetails(
+    final notificationDetails = NotificationDetails(
       android: androidDetails,
       iOS: DarwinNotificationDetails(
         presentAlert: true,

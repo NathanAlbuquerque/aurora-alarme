@@ -69,6 +69,9 @@ void alarmCallback(int id) async {
     body: 'Hora de acordar com as cores da aurora!',
     payload: id.toString(),
   );
+
+  // 6. Attempt direct full-screen activity start with NEW_TASK/CLEAR_TOP flags
+  await ScreenControlService.instance.launchAlarmFullScreen(id, payload: id.toString());
 }
 
 class AlarmService {

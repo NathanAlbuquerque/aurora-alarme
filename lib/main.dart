@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'core/constants/app_constants.dart';
 import 'core/services/alarm_service.dart';
 import 'core/services/notification_service.dart';
+import 'core/services/screen_control_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
 import 'features/alarm/models/alarm_model.dart';
@@ -36,28 +37,48 @@ class AuroraAlarmApp extends ConsumerStatefulWidget {
 }
 
 class _AuroraAlarmAppState extends ConsumerState<AuroraAlarmApp> {
+  bool _isRingingScreenActive = false;
+
   @override
   void initState() {
     super.initState();
 
-    // Listen for alarm notification clicks or background triggers
+    // 1. Listen for notification payload taps
     NotificationService.instance.onNotificationPayload.stream.listen((payload) {
-      if (payload != null) {
+      if (payload != null && payload.isNotEmpty) {
         _navigateToRingingScreen(payload);
       }
     });
 
-    // Check if app was launched directly by tapping a notification
+    // 2. Listen for native Android onAlarmTriggered (e.g. from onNewIntent / Full-Screen Intent)
+    ScreenControlService.instance.onAlarmTriggered.listen((payload) {
+      if (payload.isNotEmpty) {
+        _navigateToRingingScreen(payload);
+      }
+    });
+
+    // 3. Check if app was launched directly by notification or native full-screen intent
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final initialPayload =
+      final initialNotificationPayload =
           await NotificationService.instance.getInitialPayload();
-      if (initialPayload != null) {
-        _navigateToRingingScreen(initialPayload);
+      if (initialNotificationPayload != null &&
+          initialNotificationPayload.isNotEmpty) {
+        _navigateToRingingScreen(initialNotificationPayload);
+        return;
+      }
+
+      final initialNativePayload =
+          await ScreenControlService.instance.getInitialAlarmPayload();
+      if (initialNativePayload != null && initialNativePayload.isNotEmpty) {
+        _navigateToRingingScreen(initialNativePayload);
       }
     });
   }
 
   Future<void> _navigateToRingingScreen(String payload) async {
+    if (_isRingingScreenActive) return;
+    _isRingingScreenActive = true;
+
     final alarmId = int.tryParse(payload);
     AlarmModel? targetAlarm;
 
@@ -84,11 +105,13 @@ class _AuroraAlarmAppState extends ConsumerState<AuroraAlarmApp> {
       minute: DateTime.now().minute,
     );
 
-    appNavigatorKey.currentState?.push(
+    await appNavigatorKey.currentState?.push(
       MaterialPageRoute(
         builder: (_) => AlarmRingingScreen(alarm: targetAlarm!),
       ),
     );
+
+    _isRingingScreenActive = false;
   }
 
   @override
