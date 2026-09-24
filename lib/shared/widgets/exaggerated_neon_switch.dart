@@ -31,6 +31,7 @@ class _ExaggeratedNeonSwitchState extends State<ExaggeratedNeonSwitch>
   late AnimationController _controller;
   late Animation<double> _slideAnimation;
   late Animation<double> _squashAnimation;
+  bool _isPressed = false;
 
   @override
   void initState() {
@@ -81,7 +82,7 @@ class _ExaggeratedNeonSwitchState extends State<ExaggeratedNeonSwitch>
   }
 
   void _handleTap() {
-    HapticFeedback.lightImpact();
+    HapticFeedback.mediumImpact();
     widget.onChanged(!widget.value);
   }
 
@@ -91,12 +92,19 @@ class _ExaggeratedNeonSwitchState extends State<ExaggeratedNeonSwitch>
     final thumbSize = widget.height - 8;
     final maxSlide = widget.width - thumbSize - 8;
 
-    return GestureDetector(
-      onTap: _handleTap,
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, _) {
+    return AnimatedScale(
+      scale: _isPressed ? 0.93 : 1.0,
+      duration: const Duration(milliseconds: 90),
+      curve: Curves.easeOutCubic,
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _isPressed = true),
+        onTapUp: (_) => setState(() => _isPressed = false),
+        onTapCancel: () => setState(() => _isPressed = false),
+        onTap: _handleTap,
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, _) {
           final progress = _slideAnimation.value;
           final squash = _squashAnimation.value;
           final thumbX = progress * maxSlide;
@@ -193,10 +201,13 @@ class _ExaggeratedNeonSwitchState extends State<ExaggeratedNeonSwitch>
                         child: AnimatedOpacity(
                           opacity: progress,
                           duration: const Duration(milliseconds: 150),
-                          child: Icon(
-                            Icons.bolt_rounded,
-                            size: 14,
-                            color: const Color(0xFF03221C),
+                          child: Transform.rotate(
+                            angle: progress * 0.5,
+                            child: const Icon(
+                              Icons.bolt_rounded,
+                              size: 14,
+                              color: Color(0xFF03221C),
+                            ),
                           ),
                         ),
                       ),
@@ -208,6 +219,7 @@ class _ExaggeratedNeonSwitchState extends State<ExaggeratedNeonSwitch>
           );
         },
       ),
-    );
-  }
+    ),
+  );
+}
 }

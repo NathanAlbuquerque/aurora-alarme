@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
+import '../utils/haptic_utils.dart';
 
 enum NeonButtonVariant {
   primary, // Neon Cyan & Emerald
@@ -122,9 +123,15 @@ class _NeonButtonState extends State<NeonButton> {
           child: InkWell(
             borderRadius: BorderRadius.circular(widget.borderRadius),
             onHighlightChanged: (pressed) {
+              if (pressed) AppHaptics.lightTap();
               setState(() => _isPressed = pressed);
             },
-            onTap: widget.onPressed,
+            onTap: widget.onPressed != null
+                ? () {
+                    AppHaptics.mediumImpact();
+                    widget.onPressed!();
+                  }
+                : null,
             child: Ink(
               decoration: BoxDecoration(
                 gradient: gradient,
