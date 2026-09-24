@@ -5,6 +5,7 @@
 -keep class io.flutter.view.** { *; }
 -keep class io.flutter.** { *; }
 -keep class io.flutter.plugins.** { *; }
+-keep class com.example.aurora_alarm.** { *; }
 
 # flutter_local_notifications
 -keep class com.dexterous.flutterlocalnotifications.** { *; }
