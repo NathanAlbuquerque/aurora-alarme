@@ -217,4 +217,27 @@ class AlarmService {
       rescheduleOnReboot: true,
     );
   }
+
+  /// Retrieves an alarm by its ID from persistent storage
+  Future<AlarmModel?> getAlarmById(int id) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final alarmsJson = prefs.getString(AppConstants.keyAlarms);
+      if (alarmsJson != null) {
+        final List<dynamic> list = jsonDecode(alarmsJson);
+        final alarms = list.map((e) => AlarmModel.fromJson(e)).toList();
+        return alarms.firstWhere(
+          (a) => a.id == id,
+          orElse: () => AlarmModel(
+            id: id,
+            hour: DateTime.now().hour,
+            minute: DateTime.now().minute,
+          ),
+        );
+      }
+    } catch (e) {
+      developer.log('Error reading alarm by ID: $e', name: 'AlarmService');
+    }
+    return null;
+  }
 }

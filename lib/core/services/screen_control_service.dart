@@ -62,6 +62,17 @@ class ScreenControlService {
     }
   }
 
+  /// Clears the consumed alarm payload on the native Android side to prevent re-triggering on resume.
+  Future<void> clearAlarmPayload() async {
+    if (!Platform.isAndroid) return;
+    try {
+      await _channel.invokeMethod('clearAlarmPayload');
+      developer.log('Cleared native alarm payload', name: 'ScreenControlService');
+    } catch (e) {
+      developer.log('clearAlarmPayload note: $e', name: 'ScreenControlService');
+    }
+  }
+
   /// Retrieves the alarm payload if MainActivity was launched directly from an intent.
   Future<String?> getInitialAlarmPayload() async {
     if (!Platform.isAndroid) return null;

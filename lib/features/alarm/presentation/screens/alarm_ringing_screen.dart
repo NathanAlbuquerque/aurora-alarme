@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/services/alarm_service.dart';
 import '../../../../core/services/audio_ringtone_service.dart';
 import '../../../../core/services/screen_control_service.dart';
+import '../../../../core/state/alarm_ringing_manager.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../models/alarm_model.dart';
 import '../widgets/hold_to_dismiss_button.dart';
@@ -47,6 +48,13 @@ class _AlarmRingingScreenState extends State<AlarmRingingScreen>
     _activeChallenge = widget.alarm.mission;
     _isChallengeCompleted = widget.alarm.mission == 'none';
 
+    // Register callback for when notification dismiss/snooze button is pressed externally
+    AlarmRingingManager.instance.onDismiss = () {
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    };
+
     _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) {
         setState(() => _currentTime = DateTime.now());
@@ -70,6 +78,7 @@ class _AlarmRingingScreenState extends State<AlarmRingingScreen>
 
   @override
   void dispose() {
+    AlarmRingingManager.instance.onDismiss = null;
     AudioRingtoneService.instance.stop();
     _clockTimer.cancel();
     _equalizerController.dispose();

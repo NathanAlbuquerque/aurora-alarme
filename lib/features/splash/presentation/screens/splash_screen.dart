@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/navigation/aurora_page_route.dart';
+import '../../../../core/state/alarm_ringing_manager.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../alarm/presentation/screens/home_screen.dart';
 
@@ -31,14 +32,16 @@ class _SplashScreenState extends State<SplashScreen>
     )..repeat();
 
     _navigationTimer = Timer(const Duration(milliseconds: 2200), () {
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          AuroraPageRoute(
-            page: const HomeScreen(),
-            transitionDuration: const Duration(milliseconds: 600),
-          ),
-        );
-      }
+      if (!mounted) return;
+      // CRITICAL: If an alarm is ringing, DO NOT navigate or replace the route!
+      if (AlarmRingingManager.instance.isRinging) return;
+
+      Navigator.of(context).pushReplacement(
+        AuroraPageRoute(
+          page: const HomeScreen(),
+          transitionDuration: const Duration(milliseconds: 600),
+        ),
+      );
     });
   }
 

@@ -141,6 +141,17 @@ class MainActivity : FlutterActivity() {
                             result.success(false)
                         }
                     }
+                    "clearAlarmPayload" -> {
+                        latestAlarmPayload = null
+                        intent?.removeExtra("payload")
+                        intent?.removeExtra("notification_payload")
+                        intent?.removeExtra("notificationPayload")
+                        intent?.removeExtra("alarm_id")
+                        intent?.removeExtra("alarmId")
+                        intent?.removeExtra("notification_id")
+                        intent?.removeExtra("notificationId")
+                        result.success(true)
+                    }
                     "launchAlarmFullScreen" -> {
                         val payload = call.argument<String>("payload")
                         val alarmId = call.argument<Int>("alarmId")
@@ -224,36 +235,10 @@ class MainActivity : FlutterActivity() {
             Log.e(TAG, "Failed to acquire WakeLock: ${e.message}")
         }
 
-        // 4. Request Keyguard dismissal for swipe/non-secure lock screens
-        try {
-            val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as? KeyguardManager
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                keyguardManager?.requestDismissKeyguard(
-                    this,
-                    object : KeyguardManager.KeyguardDismissCallback() {
-                        override fun onDismissError() {
-                            Log.d(TAG, "Keyguard dismiss error")
-                        }
-                        override fun onDismissSucceeded() {
-                            Log.d(TAG, "Keyguard dismiss succeeded")
-                        }
-                        override fun onDismissCancelled() {
-                            Log.d(TAG, "Keyguard dismiss cancelled")
-                        }
-                    }
-                )
-            }
-            @Suppress("DEPRECATION")
-            val keyguardLock = keyguardManager?.newKeyguardLock("AuroraAlarmKeyguardLock")
-            @Suppress("DEPRECATION")
-            try {
-                keyguardLock?.disableKeyguard()
-            } catch (e: Exception) {
-                Log.d(TAG, "Keyguard disable error: ${e.message}")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to request dismiss keyguard: ${e.message}")
-        }
+        // NOTE: We intentionally DO NOT call requestDismissKeyguard() here!
+        // Calling requestDismissKeyguard() on a secured device prompts the user for PIN/Password/Fingerprint.
+        // Alarm apps must render directly over the lockscreen with setShowWhenLocked(true)
+        // without demanding user credentials until the user chooses to unlock.
     }
 
     private fun dismissLockscreen() {

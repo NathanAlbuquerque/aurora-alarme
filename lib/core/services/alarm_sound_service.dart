@@ -58,7 +58,7 @@ class AlarmSoundService {
         ),
         androidAudioFocusGainType:
             AndroidAudioFocusGainType.gainTransientExclusive,
-        androidWillPauseWhenDucked: true,
+        androidWillPauseWhenDucked: false,
       ));
       _isSessionConfigured = true;
     } catch (e) {
@@ -73,6 +73,20 @@ class AlarmSoundService {
     double volume = 1.0,
     bool vibrate = false,
   }) async {
+    final sound = AlarmSounds.getById(soundIdOrPath);
+
+    // If already playing this exact sound in loop, maintain playback and ensure vibration
+    if (isPlaying && _currentlyPlayingSoundId == sound.id) {
+      await _player?.setVolume(volume.clamp(0.0, 1.0));
+      if (vibrate && _vibrationTimer == null) {
+        _vibrationTimer =
+            Timer.periodic(const Duration(milliseconds: 650), (_) {
+          HapticFeedback.heavyImpact();
+        });
+      }
+      return;
+    }
+
     try {
       await stop();
       await _configureAudioSession().timeout(
@@ -82,7 +96,6 @@ class AlarmSoundService {
         },
       );
 
-      final sound = AlarmSounds.getById(soundIdOrPath);
       _currentlyPlayingSoundId = sound.id;
       _currentSoundController.add(sound.id);
 
