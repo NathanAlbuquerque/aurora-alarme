@@ -10,7 +10,7 @@ import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
 import 'features/alarm/models/alarm_model.dart';
 import 'features/alarm/presentation/screens/alarm_ringing_screen.dart';
-import 'features/alarm/presentation/screens/home_screen.dart';
+import 'features/splash/presentation/screens/splash_screen.dart';
 
 final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -111,7 +111,7 @@ class _AuroraAlarmAppState extends ConsumerState<AuroraAlarmApp> {
         Locale('pt', 'BR'),
         Locale('en', 'US'),
       ],
-      home: const HomeScreen(),
+      home: const SplashScreen(),
     );
   }
 }

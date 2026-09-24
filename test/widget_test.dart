@@ -18,11 +18,16 @@ void main() {
       ),
     );
 
-    // Pump a duration to allow flutter_animate scheduled timers to run
+    // Pump a duration to verify SplashScreen is rendered
     await tester.pump(const Duration(milliseconds: 500));
-
-    // Verify Aurora Alarm title and section header are present
     expect(find.text('AURORA ALARM'), findsOneWidget);
+    expect(find.text('ACORDE COM ENERGIA'), findsOneWidget);
+
+    // Pump past splash duration to reach HomeScreen
+    await tester.pump(const Duration(milliseconds: 2500));
+    await tester.pump(const Duration(milliseconds: 700));
+
+    // Verify HomeScreen elements
     expect(find.text('Seus Alarmes'), findsOneWidget);
     expect(find.text('NOVO ALARME'), findsOneWidget);
 

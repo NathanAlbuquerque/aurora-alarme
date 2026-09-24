@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../navigation/aurora_page_route.dart';
 import 'app_colors.dart';
 import 'app_typography.dart';
 
@@ -42,6 +43,17 @@ class AppTheme {
       colorScheme: darkColorScheme,
       scaffoldBackgroundColor: AppColors.darkVoid,
       textTheme: textTheme,
+
+      // Custom Aurora Page Transitions
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: AuroraPageTransitionsBuilder(),
+          TargetPlatform.iOS: AuroraPageTransitionsBuilder(),
+          TargetPlatform.linux: AuroraPageTransitionsBuilder(),
+          TargetPlatform.macOS: AuroraPageTransitionsBuilder(),
+          TargetPlatform.windows: AuroraPageTransitionsBuilder(),
+        },
+      ),
 
       // App Bar Theme
       appBarTheme: const AppBarTheme(
@@ -184,6 +196,17 @@ class AppTheme {
       colorScheme: lightColorScheme,
       scaffoldBackgroundColor: AppColors.lightBackground,
       textTheme: textTheme,
+
+      // Custom Aurora Page Transitions
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: AuroraPageTransitionsBuilder(),
+          TargetPlatform.iOS: AuroraPageTransitionsBuilder(),
+          TargetPlatform.linux: AuroraPageTransitionsBuilder(),
+          TargetPlatform.macOS: AuroraPageTransitionsBuilder(),
+          TargetPlatform.windows: AuroraPageTransitionsBuilder(),
+        },
+      ),
 
       // App Bar Theme
       appBarTheme: const AppBarTheme(
