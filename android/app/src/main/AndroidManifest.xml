@@ -19,7 +19,7 @@
     <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
 
     <application
-        android:label="aurora_alarm"
+        android:label="Aurora Alarm"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
