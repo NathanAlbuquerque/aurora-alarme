@@ -25,7 +25,7 @@ void alarmCallback(int id) async {
   await NotificationService.instance.initialize();
 
   // 3. Find saved alarm metadata from SharedPreferences
-  String alarmTitle = 'Aurora Alarm';
+  String alarmTitle = 'Aurora Alarme';
   String alarmSound = 'Aurora Celestial';
   bool vibrate = true;
 

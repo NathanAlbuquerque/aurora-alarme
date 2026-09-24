@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:aurora_alarm/features/alarm/presentation/widgets/empty_alarms_illustration.dart';
-import 'package:aurora_alarm/features/alarm/presentation/widgets/parallax_alarm_scroll_wrapper.dart';
-import 'package:aurora_alarm/features/alarm/presentation/widgets/rive_empty_cosmos_animation.dart';
+import 'package:aurora_alarme/features/alarm/presentation/widgets/empty_alarms_illustration.dart';
+import 'package:aurora_alarme/features/alarm/presentation/widgets/parallax_alarm_scroll_wrapper.dart';
+import 'package:aurora_alarme/features/alarm/presentation/widgets/rive_empty_cosmos_animation.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -80,9 +80,9 @@ void main() {
                 builder: (context, parallaxOffset, glowIntensity) {
                   receivedParallax = parallaxOffset;
                   receivedGlow = glowIntensity;
-                  return Container(
+                  return const SizedBox(
                     height: 120,
-                    key: const Key('parallax_child'),
+                    key: Key('parallax_child'),
                     child: Text('Parallax Child'),
                   );
                 },

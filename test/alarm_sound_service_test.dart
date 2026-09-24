@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:aurora_alarm/core/constants/alarm_sounds.dart';
-import 'package:aurora_alarm/core/services/alarm_sound_service.dart';
+import 'package:aurora_alarme/core/constants/alarm_sounds.dart';
+import 'package:aurora_alarme/core/services/alarm_sound_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

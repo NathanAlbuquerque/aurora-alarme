@@ -171,7 +171,7 @@ class _SplashScreenState extends State<SplashScreen>
                     ],
                   ).createShader(bounds),
                   child: Text(
-                    'AURORA ALARM',
+                    'AURORA ALARME',
                     style: GoogleFonts.spaceGrotesk(
                       fontSize: 32,
                       fontWeight: FontWeight.w900,

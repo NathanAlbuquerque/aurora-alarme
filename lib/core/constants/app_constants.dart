@@ -1,5 +1,5 @@
 class AppConstants {
-  static const String appName = 'Aurora Alarm';
+  static const String appName = 'Aurora Alarme';
   static const String appVersion = '1.0.0';
 
   // Notification Channels

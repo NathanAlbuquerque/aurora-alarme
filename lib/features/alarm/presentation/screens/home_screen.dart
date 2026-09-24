@@ -139,7 +139,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           .createShader(bounds);
                     },
                     child: Text(
-                      'AURORA ALARM',
+                      'AURORA ALARME',
                       style: AppTypography.headlineBold(
                         color: Colors.white,
                         size: 22,

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:aurora_alarm/features/alarm/presentation/widgets/hold_to_dismiss_button.dart';
-import 'package:aurora_alarm/features/alarm/presentation/widgets/ringing_challenge_widget.dart';
-import 'package:aurora_alarm/features/alarm/presentation/widgets/rive_alarm_animation.dart';
+import 'package:aurora_alarme/features/alarm/presentation/widgets/hold_to_dismiss_button.dart';
+import 'package:aurora_alarme/features/alarm/presentation/widgets/ringing_challenge_widget.dart';
+import 'package:aurora_alarme/features/alarm/presentation/widgets/rive_alarm_animation.dart';
 
 void main() {
   setUp(() {

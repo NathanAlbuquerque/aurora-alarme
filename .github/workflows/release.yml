@@ -1,4 +1,4 @@
-name: Production Release - Aurora Alarm
+name: Production Release - Aurora Alarme
 
 on:
   push:
@@ -84,7 +84,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: Aurora Alarm ${{ github.ref_name }}
+          name: Aurora Alarme ${{ github.ref_name }}
           generate_release_notes: true
           files: release-assets/*
           draft: false
