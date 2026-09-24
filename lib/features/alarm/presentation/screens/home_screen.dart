@@ -17,6 +17,7 @@ import '../../providers/alarm_provider.dart';
 import '../widgets/alarm_card.dart';
 import '../widgets/aurora_clock_widget.dart';
 import '../widgets/empty_alarms_illustration.dart';
+import '../widgets/parallax_alarm_scroll_wrapper.dart';
 import 'add_edit_alarm_screen.dart';
 
 /// Primary Flagship Screen for Aurora Alarm
@@ -380,22 +381,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
                     final alarm = alarms[index];
-                    return AlarmCard(
-                      key: ValueKey(alarm.id),
-                      alarm: alarm,
-                      index: index,
-                      onTap: () => _handleEditAlarm(alarm),
-                      onToggle: (_) {
-                        ref
-                            .read(alarmListProvider.notifier)
-                            .toggleAlarm(alarm.id);
+                    return ParallaxAlarmScrollWrapper(
+                      builder: (context, parallaxOffset, glowIntensity) {
+                        return AlarmCard(
+                          key: ValueKey(alarm.id),
+                          alarm: alarm,
+                          index: index,
+                          parallaxOffset: parallaxOffset,
+                          glowMultiplier: glowIntensity,
+                          onTap: () => _handleEditAlarm(alarm),
+                          onToggle: (_) {
+                            ref
+                                .read(alarmListProvider.notifier)
+                                .toggleAlarm(alarm.id);
+                          },
+                          onDelete: () {
+                            ref
+                                .read(alarmListProvider.notifier)
+                                .deleteAlarm(alarm.id);
+                          },
+                          onToggleDay: (day) => _handleToggleDay(alarm, day),
+                        );
                       },
-                      onDelete: () {
-                        ref
-                            .read(alarmListProvider.notifier)
-                            .deleteAlarm(alarm.id);
-                      },
-                      onToggleDay: (day) => _handleToggleDay(alarm, day),
                     );
                   },
                   childCount: alarms.length,
