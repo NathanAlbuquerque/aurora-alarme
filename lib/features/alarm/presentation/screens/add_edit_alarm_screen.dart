@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/utils/date_time_utils.dart';
+import '../../../../shared/utils/haptic_utils.dart';
 import '../../../../shared/widgets/animated_gradient_background.dart';
 import '../../../../shared/widgets/confetti_celebration.dart';
 import '../../../../shared/widgets/exaggerated_neon_switch.dart';
@@ -75,7 +75,7 @@ class _AddEditAlarmScreenState extends ConsumerState<AddEditAlarmScreen> {
   void _handleSave(ConfettiCelebrationState? confetti) async {
     if (_isSaving) return;
     setState(() => _isSaving = true);
-    HapticFeedback.heavyImpact();
+    AppHaptics.successPattern();
 
     // Trigger celebratory confetti explosion
     confetti?.blast(origin: const Offset(0.5, 0.8));
@@ -372,7 +372,7 @@ class _AddEditAlarmScreenState extends ConsumerState<AddEditAlarmScreen> {
                                   }).toList(),
                                   onChanged: (val) {
                                     if (val != null) {
-                                      HapticFeedback.selectionClick();
+                                      AppHaptics.selectionTick();
                                       setState(() => _sound = val);
                                     }
                                   },
@@ -600,9 +600,9 @@ class _MissionCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Expanded(
-      child: GestureDetector(
+      child: ScaleBounceFeedback(
         onTap: () {
-          HapticFeedback.selectionClick();
+          AppHaptics.lightTap();
           onTap();
         },
         child: Container(

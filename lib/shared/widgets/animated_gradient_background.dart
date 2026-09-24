@@ -8,11 +8,13 @@ import 'aurora_particles.dart';
 class AnimatedGradientBackground extends StatefulWidget {
   final Widget child;
   final bool showParticles;
+  final bool isPartyMode;
 
   const AnimatedGradientBackground({
     super.key,
     required this.child,
     this.showParticles = true,
+    this.isPartyMode = false,
   });
 
   @override
@@ -29,8 +31,23 @@ class _AnimatedGradientBackgroundState extends State<AnimatedGradientBackground>
     super.initState();
     _animController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 14),
+      duration: widget.isPartyMode
+          ? const Duration(seconds: 4)
+          : const Duration(seconds: 14),
     )..repeat();
+  }
+
+  @override
+  void didUpdateWidget(covariant AnimatedGradientBackground oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isPartyMode != widget.isPartyMode) {
+      _animController.duration = widget.isPartyMode
+          ? const Duration(seconds: 4)
+          : const Duration(seconds: 14);
+      if (_animController.isAnimating) {
+        _animController.repeat();
+      }
+    }
   }
 
   @override
@@ -162,6 +179,31 @@ class _AnimatedGradientBackgroundState extends State<AnimatedGradientBackground>
                     ),
                   ),
                 ),
+
+                // Party Mode Dynamic Sweep Disco Halo
+                if (widget.isPartyMode)
+                  Positioned.fill(
+                    child: Transform.rotate(
+                      angle: t * 1.5,
+                      child: Opacity(
+                        opacity: 0.28,
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            gradient: SweepGradient(
+                              colors: [
+                                AppColors.neonCyan,
+                                AppColors.neonPink,
+                                AppColors.neonYellow,
+                                AppColors.plasmaViolet,
+                                AppColors.hyperOrange,
+                                AppColors.neonCyan,
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             );
           },
@@ -171,7 +213,7 @@ class _AnimatedGradientBackgroundState extends State<AnimatedGradientBackground>
         if (widget.showParticles)
           Positioned.fill(
             child: AuroraParticles(
-              numberOfParticles: isDark ? 28 : 16,
+              numberOfParticles: widget.isPartyMode ? 52 : (isDark ? 28 : 16),
               isDark: isDark,
             ),
           ),

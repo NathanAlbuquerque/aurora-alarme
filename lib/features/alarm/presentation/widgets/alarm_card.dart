@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/utils/date_time_utils.dart';
+import '../../../../shared/utils/haptic_utils.dart';
 import '../../../../shared/widgets/exaggerated_neon_switch.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../../models/alarm_model.dart';
@@ -49,7 +50,10 @@ class AlarmCard extends StatelessWidget {
           size: 32,
         ),
       ),
-      onDismissed: (_) => onDelete(),
+      onDismissed: (_) {
+        AppHaptics.heavyImpact();
+        onDelete();
+      },
       child: GlassCard(
         margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         borderRadius: 28,

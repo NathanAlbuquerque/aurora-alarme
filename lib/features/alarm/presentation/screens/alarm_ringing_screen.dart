@@ -124,36 +124,54 @@ class _AlarmRingingScreenState extends State<AlarmRingingScreen>
               SafeArea(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Top Beacon Header
-                      _buildTopHeader(),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: constraints.maxHeight,
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              // Top Beacon Header
+                              _buildTopHeader(),
 
-                      // Center Time & Audio Reactive Equalizer Core
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _buildGiantPulsatingClock(hourStr, minuteStr, secondsStr),
-                          const SizedBox(height: 16),
-                          _buildAlarmLabelBadge(formattedDate),
-                        ],
-                      ),
+                              const SizedBox(height: 12),
 
-                      // Wakeup Challenge Area
-                      if (_activeChallenge != 'none')
-                        RingingChallengeWidget(
-                          challengeType: _activeChallenge,
-                          onCompleted: () {
-                            setState(() => _isChallengeCompleted = true);
-                          },
-                        )
-                      else
-                        _buildChallengePickerHint(),
+                              // Center Time & Audio Reactive Equalizer Core
+                              Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _buildGiantPulsatingClock(hourStr, minuteStr, secondsStr),
+                                  const SizedBox(height: 16),
+                                  _buildAlarmLabelBadge(formattedDate),
+                                ],
+                              ),
 
-                      // Bottom Action Controls
-                      _buildBottomControls(),
-                    ],
+                              const SizedBox(height: 12),
+
+                              // Wakeup Challenge Area
+                              if (_activeChallenge != 'none')
+                                RingingChallengeWidget(
+                                  challengeType: _activeChallenge,
+                                  onCompleted: () {
+                                    setState(() => _isChallengeCompleted = true);
+                                  },
+                                )
+                              else
+                                _buildChallengePickerHint(),
+
+                              const SizedBox(height: 16),
+
+                              // Bottom Action Controls
+                              _buildBottomControls(),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),

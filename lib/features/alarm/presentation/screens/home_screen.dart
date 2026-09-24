@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/navigation/aurora_page_route.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/party_mode_provider.dart';
 import '../../../../core/theme/theme_provider.dart';
 import '../../../../shared/utils/date_time_utils.dart';
+import '../../../../shared/utils/haptic_utils.dart';
 import '../../../../shared/utils/permission_utils.dart';
 import '../../../../shared/widgets/animated_gradient_background.dart';
 import '../../../../shared/widgets/pulsing_fab.dart';
@@ -34,50 +37,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _handleAddNewAlarm() {
-    HapticFeedback.lightImpact();
+    AppHaptics.mediumImpact();
     Navigator.of(context).push(
-      PageRouteBuilder(
-        pageBuilder: (context, anim, secAnim) => const AddEditAlarmScreen(),
-        transitionsBuilder: (context, anim, secAnim, child) {
-          return FadeTransition(
-            opacity: anim,
-            child: SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0, 0.08),
-                end: Offset.zero,
-              ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
-              child: child,
-            ),
-          );
-        },
+      AuroraPageRoute(
+        page: const AddEditAlarmScreen(),
       ),
     );
   }
 
   void _handleEditAlarm(AlarmModel alarm) {
-    HapticFeedback.lightImpact();
+    AppHaptics.lightTap();
     Navigator.of(context).push(
-      PageRouteBuilder(
-        pageBuilder: (context, anim, secAnim) =>
-            AddEditAlarmScreen(initialAlarm: alarm),
-        transitionsBuilder: (context, anim, secAnim, child) {
-          return FadeTransition(
-            opacity: anim,
-            child: SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0, 0.08),
-                end: Offset.zero,
-              ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
-              child: child,
-            ),
-          );
-        },
+      AuroraPageRoute(
+        page: AddEditAlarmScreen(initialAlarm: alarm),
       ),
     );
   }
 
   void _handleToggleDay(AlarmModel alarm, int day) {
-    HapticFeedback.selectionClick();
+    AppHaptics.selectionTick();
     final days = List<int>.from(alarm.repeatDays);
     if (days.contains(day)) {
       days.remove(day);
@@ -92,6 +70,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final alarms = ref.watch(alarmListProvider);
     final themeMode = ref.watch(themeProvider);
+    final isPartyMode = ref.watch(partyModeProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Next upcoming active alarm countdown
@@ -108,6 +87,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Scaffold(
       body: AnimatedGradientBackground(
         showParticles: true,
+        isPartyMode: isPartyMode,
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
@@ -177,31 +157,76 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
               actions: [
                 // Theme Toggle with Rotation & Scale Micro-Interaction
-                Container(
-                  margin: const EdgeInsets.only(right: 18),
-                  decoration: BoxDecoration(
-                    color: (isDark
-                            ? AppColors.darkSurface
-                            : AppColors.lightSurface)
-                        .withAlpha(isDark ? 180 : 220),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isDark
-                          ? AppColors.darkBorder
-                          : AppColors.lightBorder,
-                      width: 1.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: (isDark ? AppColors.neonCyan : const Color(0xFF7928CA))
-                            .withAlpha(isDark ? 40 : 25),
-                        blurRadius: 12,
+                // Party Mode / Rave Mode Toggle Button
+                ScaleBounceFeedback(
+                  onTap: () {
+                    ref.read(partyModeProvider.notifier).toggle();
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 8),
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: isPartyMode
+                          ? AppColors.neonPink.withAlpha(50)
+                          : (isDark
+                                  ? AppColors.darkSurface
+                                  : AppColors.lightSurface)
+                              .withAlpha(isDark ? 180 : 220),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isPartyMode
+                            ? AppColors.neonPink
+                            : (isDark
+                                ? AppColors.darkBorder
+                                : AppColors.lightBorder),
+                        width: 1.5,
                       ),
-                    ],
+                      boxShadow: isPartyMode
+                          ? AppColors.neonGlow(AppColors.neonPink, blur: 16)
+                          : [],
+                    ),
+                    child: Icon(
+                      Icons.celebration_rounded,
+                      color: isPartyMode
+                          ? AppColors.neonYellow
+                          : (isDark ? AppColors.darkTextMuted : Colors.grey),
+                      size: 20,
+                    ),
                   ),
-                  child: IconButton(
-                    tooltip: 'Alternar Tema',
-                    icon: AnimatedSwitcher(
+                ),
+
+                // Theme Toggle with Rotation & Scale Micro-Interaction
+                ScaleBounceFeedback(
+                  onTap: () {
+                    AppHaptics.lightTap();
+                    ref.read(themeProvider.notifier).toggleTheme();
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 18),
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: (isDark
+                              ? AppColors.darkSurface
+                              : AppColors.lightSurface)
+                          .withAlpha(isDark ? 180 : 220),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isDark
+                            ? AppColors.darkBorder
+                            : AppColors.lightBorder,
+                        width: 1.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: (isDark
+                                  ? AppColors.neonCyan
+                                  : const Color(0xFF7928CA))
+                              .withAlpha(isDark ? 40 : 25),
+                          blurRadius: 12,
+                        ),
+                      ],
+                    ),
+                    child: AnimatedSwitcher(
                       duration: const Duration(milliseconds: 300),
                       transitionBuilder: (child, anim) =>
                           RotationTransition(turns: anim, child: child),
@@ -216,14 +241,53 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         size: 20,
                       ),
                     ),
-                    onPressed: () {
-                      HapticFeedback.lightImpact();
-                      ref.read(themeProvider.notifier).toggleTheme();
-                    },
                   ),
                 ),
               ],
             ),
+
+            // Party Mode Extreme Rave Banner
+            if (isPartyMode)
+              SliverToBoxAdapter(
+                child: Container(
+                  margin:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [
+                        AppColors.neonPink,
+                        AppColors.neonCyan,
+                        AppColors.neonYellow,
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow:
+                        AppColors.neonGlow(AppColors.neonPink, blur: 16),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.bolt_rounded,
+                          color: Colors.black, size: 18),
+                      const SizedBox(width: 8),
+                      Text(
+                        'MODO RAVE ATIVADO • CORES EXTREMAS ⚡',
+                        style: GoogleFonts.spaceGrotesk(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.black,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+                    .animate()
+                    .scale(duration: 300.ms, curve: Curves.easeOutBack)
+                    .shimmer(duration: 1000.ms, color: Colors.white),
+              ),
 
             // =================================================================
             // ⏰ Live Pulsating Clock Header
