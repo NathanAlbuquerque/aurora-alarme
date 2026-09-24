@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:aurora_alarm/features/alarm/presentation/widgets/hold_to_dismiss_button.dart';
 import 'package:aurora_alarm/features/alarm/presentation/widgets/ringing_challenge_widget.dart';
+import 'package:aurora_alarm/features/alarm/presentation/widgets/rive_alarm_animation.dart';
 
 void main() {
   setUp(() {
@@ -97,6 +98,31 @@ void main() {
 
     // Let success animation finish
     await tester.pump(const Duration(milliseconds: 1200));
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(milliseconds: 500));
+  });
+
+  testWidgets('RiveAlarmAnimation renders correctly with bell icon and oscillations',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: RiveAlarmAnimation(
+              size: 180,
+              isRinging: true,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byType(RiveAlarmAnimation), findsOneWidget);
+    expect(find.byIcon(Icons.alarm_on_rounded), findsOneWidget);
+
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byType(RiveAlarmAnimation), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(milliseconds: 500));

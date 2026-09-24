@@ -13,6 +13,7 @@ import '../../models/alarm_model.dart';
 import '../widgets/hold_to_dismiss_button.dart';
 import '../widgets/hypnotic_ringing_background.dart';
 import '../widgets/ringing_challenge_widget.dart';
+import '../widgets/rive_alarm_animation.dart';
 
 /// Full-Screen Alarm Screen displayed over lockscreen when alarm triggers.
 /// Hyper-aesthetic, hypnotic visuals engineered to wake the user up with energy.
@@ -35,6 +36,7 @@ class _AlarmRingingScreenState extends State<AlarmRingingScreen>
   bool _isChallengeCompleted = false;
   late String _activeChallenge;
   bool _isDismissing = false;
+  bool _isSnoozePressed = false;
 
   late AnimationController _equalizerController;
 
@@ -68,6 +70,7 @@ class _AlarmRingingScreenState extends State<AlarmRingingScreen>
 
   @override
   void dispose() {
+    AudioRingtoneService.instance.stop();
     _clockTimer.cancel();
     _equalizerController.dispose();
     super.dispose();
@@ -145,12 +148,21 @@ class _AlarmRingingScreenState extends State<AlarmRingingScreen>
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   _buildGiantPulsatingClock(hourStr, minuteStr, secondsStr),
-                                  const SizedBox(height: 16),
+                                  const SizedBox(height: 12),
                                   _buildAlarmLabelBadge(formattedDate),
                                 ],
                               ),
 
-                              const SizedBox(height: 12),
+                              const SizedBox(height: 14),
+
+                              // Central Rive Alarm Animation Core
+                              RiveAlarmAnimation(
+                                size: _activeChallenge != 'none' ? 140 : 180,
+                                isRinging: !_isDismissing,
+                                primaryGlow: AppColors.neonCyan,
+                              ),
+
+                              const SizedBox(height: 14),
 
                               // Wakeup Challenge Area
                               if (_activeChallenge != 'none')
@@ -509,45 +521,100 @@ class _AlarmRingingScreenState extends State<AlarmRingingScreen>
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Tactile Press & Hold To Dismiss Button
+        // Large Tactile Press & Hold To Dismiss Button (68px)
         HoldToDismissButton(
           onDismiss: _handleDismiss,
           isLocked: !_isChallengeCompleted,
           lockedMessage: 'RESOLVA O DESAFIO PRIMEIRO',
         ),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: 14),
 
-        // Snooze Button with Moon Aura
-        GestureDetector(
-          onTap: _handleSnooze,
-          child: Container(
-            height: 52,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: AppColors.darkSurfaceElevated.withAlpha(180),
-              borderRadius: BorderRadius.circular(26),
-              border: Border.all(
-                color: AppColors.neonCyan.withAlpha(120),
-                width: 1.5,
-              ),
-              boxShadow: AppColors.neonGlow(AppColors.neonCyan, blur: 12),
+        // Large Tactile Snooze Button (64px) with spring scale animation & centered typography
+        _buildSnoozeButton(),
+
+        const SizedBox(height: 12),
+
+        Text(
+          'Segure o botão de desligar para silenciar o alarme',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.spaceGrotesk(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: AppColors.darkTextMuted,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSnoozeButton() {
+    return AnimatedScale(
+      scale: _isSnoozePressed ? 0.95 : 1.0,
+      duration: const Duration(milliseconds: 120),
+      curve: Curves.easeOutCubic,
+      child: Listener(
+        onPointerDown: (_) {
+          HapticFeedback.lightImpact();
+          setState(() => _isSnoozePressed = true);
+        },
+        onPointerUp: (_) {
+          setState(() => _isSnoozePressed = false);
+          _handleSnooze();
+        },
+        onPointerCancel: (_) => setState(() => _isSnoozePressed = false),
+        child: Container(
+          height: 64,
+          width: double.infinity,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                AppColors.darkSurfaceElevated.withAlpha(220),
+                AppColors.darkSurface.withAlpha(240),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
+            borderRadius: BorderRadius.circular(32),
+            border: Border.all(
+              color: AppColors.neonCyan.withAlpha(_isSnoozePressed ? 220 : 150),
+              width: 2.0,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.neonCyan
+                    .withAlpha(_isSnoozePressed ? 180 : 100),
+                blurRadius: _isSnoozePressed ? 24 : 16,
+                spreadRadius: 1,
+              ),
+              BoxShadow(
+                color: AppColors.plasmaViolet.withAlpha(60),
+                blurRadius: 16,
+                spreadRadius: -2,
+              ),
+            ],
+          ),
+          child: Center(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 const Icon(
-                  Icons.bedtime_rounded,
+                  Icons.snooze_rounded,
                   color: AppColors.neonCyan,
-                  size: 20,
+                  size: 24,
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 Text(
                   'Soneca (+${widget.alarm.snoozeMinutes} min)',
+                  textAlign: TextAlign.center,
                   style: GoogleFonts.spaceGrotesk(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.5,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.8,
+                    height: 1.0,
                     color: Colors.white,
                   ),
                 ),
@@ -555,17 +622,7 @@ class _AlarmRingingScreenState extends State<AlarmRingingScreen>
             ),
           ),
         ),
-
-        const SizedBox(height: 10),
-
-        Text(
-          'Segure o botão de desligar para silenciar o alarme',
-          style: TextStyle(
-            fontSize: 12,
-            color: AppColors.darkTextMuted,
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
