@@ -50,6 +50,11 @@ class NotificationService {
             AndroidFlutterLocalNotificationsPlugin>();
 
     if (androidNotificationPlugin != null) {
+      try {
+        await androidNotificationPlugin.deleteNotificationChannel(channelId: 'aurora_alarm_channel');
+        await androidNotificationPlugin.deleteNotificationChannel(channelId: 'aurora_alarm_channel_v2');
+      } catch (_) {}
+
       const channel = AndroidNotificationChannel(
         AppConstants.alarmNotificationChannelId,
         AppConstants.alarmNotificationChannelName,
@@ -57,6 +62,7 @@ class NotificationService {
         importance: Importance.max,
         playSound: true,
         enableVibration: true,
+        enableLights: true,
         showBadge: true,
         audioAttributesUsage: AudioAttributesUsage.alarm,
       );
@@ -109,6 +115,9 @@ class NotificationService {
       visibility: NotificationVisibility.public,
       ongoing: true,
       autoCancel: false,
+      playSound: true,
+      enableVibration: true,
+      enableLights: true,
       audioAttributesUsage: AudioAttributesUsage.alarm,
       additionalFlags: Int32List.fromList([4, 32]), // FLAG_INSISTENT (4), FLAG_NO_CLEAR (32)
       actions: const <AndroidNotificationAction>[

@@ -31,6 +31,20 @@ class MainActivity : FlutterActivity() {
         handleIncomingIntent(intent)
     }
 
+    override fun onStart() {
+        super.onStart()
+        wakeAndShowOverLockscreen()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        wakeAndShowOverLockscreen()
+        latestAlarmPayload?.let { payload ->
+            Log.d(TAG, "onResume: dispatching pending latestAlarmPayload='$payload'")
+            methodChannel?.invokeMethod("onAlarmTriggered", payload)
+        }
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
@@ -41,6 +55,13 @@ class MainActivity : FlutterActivity() {
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         wakeAndShowOverLockscreen()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            wakeAndShowOverLockscreen()
+        }
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -133,6 +154,7 @@ class MainActivity : FlutterActivity() {
 
         // If an intent arrived before Flutter engine finished configuring, dispatch it now
         latestAlarmPayload?.let { payload ->
+            Log.d(TAG, "configureFlutterEngine: dispatching latestAlarmPayload='$payload'")
             methodChannel?.invokeMethod("onAlarmTriggered", payload)
         }
     }
@@ -141,18 +163,25 @@ class MainActivity : FlutterActivity() {
         if (intent == null) return
         val payload = intent.getStringExtra("payload")
             ?: intent.getStringExtra("notification_payload")
-            ?: if (intent.hasExtra("alarm_id")) intent.getIntExtra("alarm_id", 0).toString()
+            ?: intent.getStringExtra("notificationPayload")
+            ?: if (intent.hasExtra("notificationId")) intent.getIntExtra("notificationId", 0).toString()
             else if (intent.hasExtra("notification_id")) intent.getIntExtra("notification_id", 0).toString()
+            else if (intent.hasExtra("alarm_id")) intent.getIntExtra("alarm_id", 0).toString()
+            else if (intent.hasExtra("alarmId")) intent.getIntExtra("alarmId", 0).toString()
             else null
 
-        if (payload != null && payload.isNotEmpty()) {
+        Log.d(TAG, "handleIncomingIntent: extracted payload='$payload', action=${intent.action}")
+
+        if (!payload.isNullOrEmpty()) {
             latestAlarmPayload = payload
             methodChannel?.invokeMethod("onAlarmTriggered", payload)
         }
     }
 
     private fun wakeAndShowOverLockscreen() {
-        // 1. API 27+ (Android 8.1+) ShowWhenLocked & TurnScreenOn
+        Log.d(TAG, "wakeAndShowOverLockscreen() invoked")
+
+        // 1. Android 8.1+ (API 27+) native lockscreen display and screen turn on
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true)
             setTurnScreenOn(true)
@@ -168,20 +197,28 @@ class MainActivity : FlutterActivity() {
             WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON
         )
 
-        // 3. Hardware PowerManager WakeLock with ACQUIRE_CAUSES_WAKEUP (powers on display from deep sleep)
+        // 3. Hardware WakeLock with ACQUIRE_CAUSES_WAKEUP to physically illuminate screen from deep sleep
         try {
             val powerManager = getSystemService(Context.POWER_SERVICE) as? PowerManager
-            if (powerManager != null && wakeLock?.isHeld != true) {
+            if (powerManager != null) {
+                if (wakeLock?.isHeld == true) {
+                    try {
+                        wakeLock?.release()
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error releasing previous wakeLock: ${e.message}")
+                    }
+                }
                 @Suppress("DEPRECATION")
                 wakeLock = powerManager.newWakeLock(
-                    PowerManager.FULL_WAKE_LOCK or
+                    PowerManager.SCREEN_BRIGHT_WAKE_LOCK or
                     PowerManager.ACQUIRE_CAUSES_WAKEUP or
                     PowerManager.ON_AFTER_RELEASE,
-                    "AuroraAlarm:ScreenWakeLock"
+                    "aurora_alarm:screen_wake_lock"
                 ).apply {
                     setReferenceCounted(false)
                     acquire(10 * 60 * 1000L /* 10 minutes */)
                 }
+                Log.d(TAG, "Acquired WakeLock with ACQUIRE_CAUSES_WAKEUP successfully")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to acquire WakeLock: ${e.message}")
@@ -191,7 +228,28 @@ class MainActivity : FlutterActivity() {
         try {
             val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as? KeyguardManager
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                keyguardManager?.requestDismissKeyguard(this, null)
+                keyguardManager?.requestDismissKeyguard(
+                    this,
+                    object : KeyguardManager.KeyguardDismissCallback() {
+                        override fun onDismissError() {
+                            Log.d(TAG, "Keyguard dismiss error")
+                        }
+                        override fun onDismissSucceeded() {
+                            Log.d(TAG, "Keyguard dismiss succeeded")
+                        }
+                        override fun onDismissCancelled() {
+                            Log.d(TAG, "Keyguard dismiss cancelled")
+                        }
+                    }
+                )
+            }
+            @Suppress("DEPRECATION")
+            val keyguardLock = keyguardManager?.newKeyguardLock("AuroraAlarmKeyguardLock")
+            @Suppress("DEPRECATION")
+            try {
+                keyguardLock?.disableKeyguard()
+            } catch (e: Exception) {
+                Log.d(TAG, "Keyguard disable error: ${e.message}")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to request dismiss keyguard: ${e.message}")
@@ -199,6 +257,7 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun dismissLockscreen() {
+        Log.d(TAG, "dismissLockscreen() invoked")
         try {
             if (wakeLock?.isHeld == true) {
                 wakeLock?.release()
@@ -216,6 +275,7 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun launchAlarmFullScreen(payload: String?, alarmId: Int?) {
+        wakeAndShowOverLockscreen()
         val launchIntent = Intent(this, MainActivity::class.java).apply {
             action = "com.aurora.alarm.RING"
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or
