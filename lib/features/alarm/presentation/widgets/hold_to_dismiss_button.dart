@@ -182,6 +182,8 @@ class _HoldToDismissButtonState extends State<HoldToDismissButton>
                     Center(
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
                             widget.isLocked
@@ -201,10 +203,12 @@ class _HoldToDismissButtonState extends State<HoldToDismissButton>
                                 : (progress > 0.05
                                     ? 'SEGURE... ${(progress * 100).toInt()}%'
                                     : 'SEGURE PARA DESLIGAR'),
+                            textAlign: TextAlign.center,
                             style: GoogleFonts.spaceGrotesk(
                               fontSize: 16,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 1.2,
+                              height: 1.0,
                               color: widget.isLocked
                                   ? AppColors.darkTextMuted
                                   : (progress > 0.4

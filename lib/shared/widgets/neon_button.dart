@@ -19,6 +19,7 @@ class NeonButton extends StatefulWidget {
   final double borderRadius;
   final bool isFullWidth;
   final Gradient? customGradient;
+  final EdgeInsetsGeometry? padding;
 
   const NeonButton({
     super.key,
@@ -30,6 +31,7 @@ class NeonButton extends StatefulWidget {
     this.borderRadius = 24.0,
     this.isFullWidth = false,
     this.customGradient,
+    this.padding,
   });
 
   @override
@@ -134,12 +136,15 @@ class _NeonButtonState extends State<NeonButton> {
                       )
                     : null,
               ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Row(
+              child: Center(
+                child: Padding(
+                  padding: widget.padding ??
+                      const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
                   mainAxisSize:
                       widget.isFullWidth ? MainAxisSize.max : MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     if (widget.icon != null) ...[
                       Icon(
@@ -147,15 +152,21 @@ class _NeonButtonState extends State<NeonButton> {
                         color: textColor,
                         size: 20,
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 8),
                     ],
-                    Text(
-                      widget.text,
-                      style: GoogleFonts.spaceGrotesk(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5,
-                        color: textColor,
+                    Flexible(
+                      child: Text(
+                        widget.text,
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.spaceGrotesk(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                          height: 1.0,
+                          color: textColor,
+                        ),
                       ),
                     ),
                   ],
@@ -165,6 +176,7 @@ class _NeonButtonState extends State<NeonButton> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
