@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:audio_session/audio_session.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
 import '../constants/alarm_sounds.dart';
 
@@ -16,6 +17,7 @@ class AlarmSoundService {
   AudioPlayer? _player;
   bool _isSessionConfigured = false;
   Timer? _previewTimer;
+  Timer? _vibrationTimer;
   String? _currentlyPlayingSoundId;
 
   /// Returns the underlying player, initializing if needed.
@@ -60,19 +62,25 @@ class AlarmSoundService {
       ));
       _isSessionConfigured = true;
     } catch (e) {
-      debugPrint('[AlarmSoundService] Error configuring audio session: $e');
+      debugPrint('[AlarmSoundService] Note on audio session config: $e');
     }
   }
 
-  /// Plays a sound continuously in an infinite loop (for live ringing alarms).
+  /// Plays a sound continuously in an infinite loop (for live ringing alarms or preview dialogs).
   /// [soundIdOrPath] can be an AlarmSound id ('dan-da-dan'), name, or asset path.
   Future<void> playInLoop(
     String soundIdOrPath, {
     double volume = 1.0,
+    bool vibrate = false,
   }) async {
     try {
       await stop();
-      await _configureAudioSession();
+      await _configureAudioSession().timeout(
+        const Duration(milliseconds: 1500),
+        onTimeout: () {
+          debugPrint('[AlarmSoundService] AudioSession config timed out, proceeding');
+        },
+      );
 
       final sound = AlarmSounds.getById(soundIdOrPath);
       _currentlyPlayingSoundId = sound.id;
@@ -82,9 +90,31 @@ class AlarmSoundService {
       await p.setAsset(sound.path);
       await p.setLoopMode(LoopMode.one);
       await p.setVolume(volume.clamp(0.0, 1.0));
-      await p.play();
+      // Crucial: do not await play() because LoopMode.one returns an infinite Future
+      unawaited(p.play());
+
+      // Start synchronized vibration loop if requested
+      if (vibrate) {
+        _vibrationTimer?.cancel();
+        _vibrationTimer =
+            Timer.periodic(const Duration(milliseconds: 650), (_) {
+          HapticFeedback.heavyImpact();
+        });
+      }
     } catch (e) {
       debugPrint('[AlarmSoundService] Error playing sound in loop: $e');
+      // Auto-heal retry with a fresh player instance
+      try {
+        await _player?.dispose();
+        _player = AudioPlayer();
+        final sound = AlarmSounds.getById(soundIdOrPath);
+        await _player!.setAsset(sound.path);
+        await _player!.setLoopMode(LoopMode.one);
+        await _player!.setVolume(volume.clamp(0.0, 1.0));
+        unawaited(_player!.play());
+      } catch (retryErr) {
+        debugPrint('[AlarmSoundService] Sound playback retry also failed: $retryErr');
+      }
     }
   }
 
@@ -105,7 +135,10 @@ class AlarmSoundService {
 
     try {
       await stop();
-      await _configureAudioSession();
+      await _configureAudioSession().timeout(
+        const Duration(milliseconds: 1500),
+        onTimeout: () {},
+      );
 
       _currentlyPlayingSoundId = sound.id;
       _currentSoundController.add(sound.id);
@@ -114,7 +147,7 @@ class AlarmSoundService {
       await p.setAsset(sound.path);
       await p.setLoopMode(LoopMode.off);
       await p.setVolume(volume.clamp(0.0, 1.0));
-      await p.play();
+      unawaited(p.play());
 
       // Automatically stop after test duration if not stopped earlier
       _previewTimer?.cancel();
@@ -131,9 +164,11 @@ class AlarmSoundService {
   Future<void> stop() async {
     _previewTimer?.cancel();
     _previewTimer = null;
+    _vibrationTimer?.cancel();
+    _vibrationTimer = null;
 
     try {
-      if (_player != null && _player!.playing) {
+      if (_player != null) {
         await _player!.stop();
       }
     } catch (e) {

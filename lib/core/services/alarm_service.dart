@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:io';
+import 'package:flutter/widgets.dart';
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../features/alarm/models/alarm_model.dart';
@@ -13,6 +14,7 @@ import 'screen_control_service.dart';
 /// even when the application process is completely dead.
 @pragma('vm:entry-point')
 void alarmCallback(int id) async {
+  WidgetsFlutterBinding.ensureInitialized();
   developer.log('Alarm trigger fired in background isolate with ID: $id',
       name: 'AlarmService');
 

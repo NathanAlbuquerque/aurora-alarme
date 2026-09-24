@@ -50,15 +50,37 @@ class AlarmSounds {
     path: 'assets/sounds/ringtone-dan-da-dan.ogg',
   );
 
-  /// Find an AlarmSound by its id, name, or path. Defaults to defaultSound.
+  /// Find an AlarmSound by its id, name, or path with legacy name fallback. Defaults to defaultSound.
   static AlarmSound getById(String? idOrNameOrPath) {
-    if (idOrNameOrPath == null) return defaultSound;
-    return all.firstWhere(
-      (sound) =>
-          sound.id == idOrNameOrPath ||
-          sound.name == idOrNameOrPath ||
-          sound.path == idOrNameOrPath,
-      orElse: () => defaultSound,
-    );
+    if (idOrNameOrPath == null || idOrNameOrPath.isEmpty) return defaultSound;
+
+    // Direct match
+    for (final sound in all) {
+      if (sound.id == idOrNameOrPath ||
+          sound.name.toLowerCase() == idOrNameOrPath.toLowerCase() ||
+          sound.path == idOrNameOrPath) {
+        return sound;
+      }
+    }
+
+    // Legacy and fuzzy matching
+    final normalized = idOrNameOrPath.toLowerCase().trim();
+    if (normalized.contains('dan') ||
+        normalized.contains('aurora') ||
+        normalized.contains('cosmic')) {
+      return all[0]; // Dan Da Dan
+    }
+    if (normalized.contains('kompa') ||
+        normalized.contains('pulse') ||
+        normalized.contains('synthwave')) {
+      return all[1]; // Kompa
+    }
+    if (normalized.contains('santa') ||
+        normalized.contains('solar') ||
+        normalized.contains('fe')) {
+      return all[2]; // Santa Fe
+    }
+
+    return defaultSound;
   }
 }

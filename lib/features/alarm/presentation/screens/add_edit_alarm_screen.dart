@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/alarm_sounds.dart';
+import '../../../../core/services/alarm_sound_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/utils/date_time_utils.dart';
@@ -41,13 +43,8 @@ class _AddEditAlarmScreenState extends ConsumerState<AddEditAlarmScreen> {
   late String _mission;
   bool _isSaving = false;
 
-  final List<String> _soundOptions = [
-    'Aurora Celestial',
-    'Neon Pulse',
-    'Synthwave Sunrise',
-    'Cosmic Bell',
-    'Energia Solar',
-  ];
+  final List<String> _soundOptions =
+      AlarmSounds.all.map((s) => s.name).toList();
 
   @override
   void initState() {
@@ -61,7 +58,7 @@ class _AddEditAlarmScreenState extends ConsumerState<AddEditAlarmScreen> {
       text: initial?.label ?? 'Despertar Aurora',
     );
     _vibrate = initial?.vibrate ?? true;
-    _sound = initial?.sound ?? _soundOptions.first;
+    _sound = AlarmSounds.getById(initial?.sound).name;
     _snoozeMinutes = initial?.snoozeMinutes ?? 5;
     _mission = initial?.mission ?? 'none';
   }
@@ -69,6 +66,7 @@ class _AddEditAlarmScreenState extends ConsumerState<AddEditAlarmScreen> {
   @override
   void dispose() {
     _labelController.dispose();
+    AlarmSoundService.instance.stop();
     super.dispose();
   }
 
@@ -347,36 +345,55 @@ class _AddEditAlarmScreenState extends ConsumerState<AddEditAlarmScreen> {
                                       : AppColors.lightBorder,
                                 ),
                               ),
-                              child: DropdownButtonHideUnderline(
-                                child: DropdownButton<String>(
-                                  value: _sound,
-                                  isExpanded: true,
-                                  icon: const Icon(Icons.music_note_rounded),
-                                  dropdownColor: isDark
-                                      ? AppColors.darkSurfaceElevated
-                                      : AppColors.lightSurface,
-                                  borderRadius: BorderRadius.circular(16),
-                                  items: _soundOptions.map((sound) {
-                                    return DropdownMenuItem<String>(
-                                      value: sound,
-                                      child: Text(
-                                        sound,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          color: isDark
-                                              ? AppColors.darkTextPrimary
-                                              : AppColors.lightTextPrimary,
-                                        ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: DropdownButtonHideUnderline(
+                                      child: DropdownButton<String>(
+                                        value: _sound,
+                                        isExpanded: true,
+                                        icon: const Icon(Icons.music_note_rounded),
+                                        dropdownColor: isDark
+                                            ? AppColors.darkSurfaceElevated
+                                            : AppColors.lightSurface,
+                                        borderRadius: BorderRadius.circular(16),
+                                        items: _soundOptions.map((sound) {
+                                          return DropdownMenuItem<String>(
+                                            value: sound,
+                                            child: Text(
+                                              sound,
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                                color: isDark
+                                                    ? AppColors.darkTextPrimary
+                                                    : AppColors.lightTextPrimary,
+                                              ),
+                                            ),
+                                          );
+                                        }).toList(),
+                                        onChanged: (val) {
+                                          if (val != null) {
+                                            AppHaptics.selectionTick();
+                                            setState(() => _sound = val);
+                                            AlarmSoundService.instance.testSound(val);
+                                          }
+                                        },
                                       ),
-                                    );
-                                  }).toList(),
-                                  onChanged: (val) {
-                                    if (val != null) {
-                                      AppHaptics.selectionTick();
-                                      setState(() => _sound = val);
-                                    }
-                                  },
-                                ),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    tooltip: 'Ouvir Som',
+                                    icon: const Icon(
+                                      Icons.play_circle_fill_rounded,
+                                      color: AppColors.neonCyan,
+                                      size: 24,
+                                    ),
+                                    onPressed: () {
+                                      AppHaptics.lightTap();
+                                      AlarmSoundService.instance.testSound(_sound);
+                                    },
+                                  ),
+                                ],
                               ),
                             ),
 

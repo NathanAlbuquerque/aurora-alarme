@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/services/alarm_sound_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/widgets/neon_button.dart';
@@ -52,6 +53,19 @@ class AlarmPreviewDialog extends StatefulWidget {
 }
 
 class _AlarmPreviewDialogState extends State<AlarmPreviewDialog> {
+  @override
+  void initState() {
+    super.initState();
+    // Play sound in loop during preview
+    AlarmSoundService.instance.playInLoop(widget.sound, volume: 1.0);
+  }
+
+  @override
+  void dispose() {
+    AlarmSoundService.instance.stop();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -283,9 +297,11 @@ class _AlarmPreviewDialogState extends State<AlarmPreviewDialog> {
                         text: 'Soneca 5m',
                         icon: Icons.snooze_rounded,
                         variant: NeonButtonVariant.outlined,
-                        height: 50,
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        height: 52,
                         onPressed: () {
                           HapticFeedback.mediumImpact();
+                          AlarmSoundService.instance.stop();
                           Navigator.of(context).pop();
                         },
                       ),
@@ -296,9 +312,11 @@ class _AlarmPreviewDialogState extends State<AlarmPreviewDialog> {
                         text: 'Desligar',
                         icon: Icons.alarm_off_rounded,
                         variant: NeonButtonVariant.secondary,
-                        height: 50,
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        height: 52,
                         onPressed: () {
                           HapticFeedback.heavyImpact();
+                          AlarmSoundService.instance.stop();
                           Navigator.of(context).pop();
                         },
                       ),
