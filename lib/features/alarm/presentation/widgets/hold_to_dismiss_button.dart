@@ -118,68 +118,72 @@ class _HoldToDismissButtonState extends State<HoldToDismissButton>
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(34),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    // Background base
-                    Container(
-                      decoration: BoxDecoration(
-                        color: widget.isLocked
-                            ? AppColors.darkSurfaceElevated.withAlpha(180)
-                            : AppColors.darkSurfaceElevated,
-                        border: Border.all(
-                          color: widget.isLocked
-                              ? AppColors.darkBorder
-                              : AppColors.neonPink.withAlpha(180),
-                          width: 2,
-                        ),
-                        borderRadius: BorderRadius.circular(34),
-                      ),
-                    ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final buttonWidth = constraints.maxWidth;
 
-                    // Charging Progress Fill Bar
-                    if (!widget.isLocked && progress > 0)
-                      FractionallySizedBox(
-                        alignment: Alignment.centerLeft,
-                        widthFactor: progress,
-                        child: Container(
+                    return Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        // Background base
+                        Container(
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [
-                                AppColors.neonPink,
-                                AppColors.hyperOrange,
-                                AppColors.neonYellow,
-                              ],
+                            color: widget.isLocked
+                                ? AppColors.darkSurfaceElevated.withAlpha(180)
+                                : AppColors.darkSurfaceElevated,
+                            border: Border.all(
+                              color: widget.isLocked
+                                  ? AppColors.darkBorder
+                                  : AppColors.neonPink.withAlpha(180),
+                              width: 2,
                             ),
                             borderRadius: BorderRadius.circular(34),
                           ),
                         ),
-                      ),
 
-                    // Particle shimmer spark on the charging head
-                    if (progress > 0.02 && progress < 0.98)
-                      Positioned(
-                        left: (MediaQuery.of(context).size.width - 48) * progress - 16,
-                        top: 0,
-                        bottom: 0,
-                        child: Container(
-                          width: 28,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white.withAlpha(220),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.white,
-                                blurRadius: 14,
-                                spreadRadius: 4,
+                        // Charging Progress Fill Bar
+                        if (!widget.isLocked && progress > 0)
+                          FractionallySizedBox(
+                            alignment: Alignment.centerLeft,
+                            widthFactor: progress,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    AppColors.neonPink,
+                                    AppColors.hyperOrange,
+                                    AppColors.neonYellow,
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(34),
                               ),
-                            ],
+                            ),
                           ),
-                        ),
-                      ),
 
-                    // Centered Content
-                    Center(
+                        // Particle shimmer spark on the charging head
+                        if (!widget.isLocked && progress > 0.02 && progress < 0.98)
+                          Positioned(
+                            left: (buttonWidth * progress - 14).clamp(0.0, buttonWidth - 28),
+                            top: 0,
+                            bottom: 0,
+                            child: Container(
+                              width: 28,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.white.withAlpha(220),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.white,
+                                    blurRadius: 14,
+                                    spreadRadius: 4,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                        // Centered Content
+                        Center(
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
@@ -220,7 +224,9 @@ class _HoldToDismissButtonState extends State<HoldToDismissButton>
                       ),
                     ),
                   ],
-                ),
+                );
+              },
+            ),
               ),
             ),
           ),

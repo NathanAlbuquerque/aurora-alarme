@@ -286,29 +286,38 @@ class _InteractiveTimeSelectorState extends State<InteractiveTimeSelector> {
 
           const SizedBox(height: 12),
 
-          // Micro gesture helper text
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.swipe_vertical_rounded,
-                size: 14,
-                color: (isDark
-                    ? AppColors.darkTextMuted
-                    : AppColors.lightTextMuted),
+          // Micro gesture helper pill
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+            decoration: BoxDecoration(
+              color: (isDark ? Colors.white : Colors.black).withAlpha(12),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: (isDark ? AppColors.darkBorder : AppColors.lightBorder)
+                    .withAlpha(90),
               ),
-              const SizedBox(width: 6),
-              Text(
-                'Arraste na vertical: horas 1 em 1 • minutos 10 em 10',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  color: (isDark
-                      ? AppColors.darkTextMuted
-                      : AppColors.lightTextMuted),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.swap_vert_rounded,
+                  size: 15,
+                  color: isDark ? AppColors.neonCyan : const Color(0xFF00796B),
                 ),
-              ),
-            ],
+                const SizedBox(width: 6),
+                Text(
+                  'Arraste vertical: horas 1 em 1 • minutos 10 em 10',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
+                  ),
+                ),
+              ],
+            ),
           ),
 
           const SizedBox(height: 18),
@@ -579,7 +588,9 @@ class _StepperButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           splashColor: AppColors.neonCyan.withAlpha(40),
           child: Container(
-            padding: const EdgeInsets.all(9),
+            width: 40,
+            height: 38,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
               color: (isDark
                       ? AppColors.darkSurfaceElevated
@@ -627,7 +638,8 @@ class _KeyboardEntryButton extends StatelessWidget {
             highlightColor: AppColors.neonCyan.withAlpha(25),
             child: Container(
               width: 52,
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+              height: 86,
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
               decoration: BoxDecoration(
                 color: (isDark
                         ? AppColors.darkSurfaceElevated
@@ -643,8 +655,8 @@ class _KeyboardEntryButton extends StatelessWidget {
                 boxShadow: isDark
                     ? [
                         BoxShadow(
-                          color: AppColors.neonCyan.withAlpha(40),
-                          blurRadius: 10,
+                          color: AppColors.neonCyan.withAlpha(45),
+                          blurRadius: 12,
                           spreadRadius: -2,
                         ),
                       ]
@@ -662,19 +674,19 @@ class _KeyboardEntryButton extends StatelessWidget {
                 children: [
                   Icon(
                     Icons.keyboard_alt_rounded,
-                    size: 22,
+                    size: 24,
                     color: isDark
                         ? AppColors.neonCyan
                         : const Color(0xFF00796B),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 5),
                   Text(
                     'DIGITAR',
                     textAlign: TextAlign.center,
                     style: GoogleFonts.spaceGrotesk(
-                      fontSize: 8.5,
+                      fontSize: 9,
                       fontWeight: FontWeight.w800,
-                      letterSpacing: 0.5,
+                      letterSpacing: 0.6,
                       color: isDark
                           ? AppColors.neonCyan
                           : const Color(0xFF00796B),

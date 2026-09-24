@@ -553,16 +553,16 @@ class _AlarmRingingScreenState extends State<AlarmRingingScreen>
       scale: _isSnoozePressed ? 0.95 : 1.0,
       duration: const Duration(milliseconds: 120),
       curve: Curves.easeOutCubic,
-      child: Listener(
-        onPointerDown: (_) {
+      child: GestureDetector(
+        onTapDown: (_) {
           HapticFeedback.lightImpact();
           setState(() => _isSnoozePressed = true);
         },
-        onPointerUp: (_) {
+        onTapUp: (_) {
           setState(() => _isSnoozePressed = false);
           _handleSnooze();
         },
-        onPointerCancel: (_) => setState(() => _isSnoozePressed = false),
+        onTapCancel: () => setState(() => _isSnoozePressed = false),
         child: Container(
           height: 64,
           width: double.infinity,
