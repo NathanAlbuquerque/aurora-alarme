@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/navigation/aurora_page_route.dart';
 import '../../../../core/state/alarm_ringing_manager.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -245,7 +246,7 @@ class _SplashScreenState extends State<SplashScreen>
             right: 0,
             child: Center(
               child: Text(
-                'v1.0.0 • DESIGN SYSTEM 2026',
+                'v${AppConstants.appVersion} • DESIGN SYSTEM 2026',
                 style: GoogleFonts.spaceGrotesk(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
