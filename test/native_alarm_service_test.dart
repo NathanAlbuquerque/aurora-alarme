@@ -95,4 +95,38 @@ void main() {
     expect(log.length, 1);
     expect(log.first.method, 'openExactAlarmSettings');
   });
+
+  test('NativeAlarmService handles incoming onAlarmDismissed event', () async {
+    int? dismissedId;
+    final subscription = NativeAlarmService.instance.onAlarmDismissed.listen((id) {
+      dismissedId = id;
+    });
+
+    // Simulate native invoking method on channel
+    final byteData = const StandardMethodCodec().encodeMethodCall(
+      const MethodCall('onAlarmDismissed', {'alarmId': 202}),
+    );
+    await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .handlePlatformMessage('aurora_alarm/native', byteData, (_) {});
+
+    expect(dismissedId, 202);
+    await subscription.cancel();
+  });
+
+  test('NativeAlarmService handles incoming onAlarmSnoozed event', () async {
+    Map<String, int>? snoozeData;
+    final subscription = NativeAlarmService.instance.onAlarmSnoozed.listen((data) {
+      snoozeData = data;
+    });
+
+    final byteData = const StandardMethodCodec().encodeMethodCall(
+      const MethodCall('onAlarmSnoozed', {'alarmId': 303, 'snoozeMinutes': 10}),
+    );
+    await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .handlePlatformMessage('aurora_alarm/native', byteData, (_) {});
+
+    expect(snoozeData?['alarmId'], 303);
+    expect(snoozeData?['snoozeMinutes'], 10);
+    await subscription.cancel();
+  });
 }

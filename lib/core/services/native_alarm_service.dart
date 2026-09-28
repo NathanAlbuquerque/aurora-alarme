@@ -1,17 +1,54 @@
+import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import '../state/alarm_ringing_manager.dart';
 
 /// Native Alarm Service communicating with Android native AlarmScheduler via
 /// MethodChannel 'aurora_alarm/native'.
 /// Part of the hybrid architecture where Kotlin handles exact alarm clock scheduling,
 /// foreground dispatch, and lockscreen presentation.
 class NativeAlarmService {
-  NativeAlarmService._();
-  static final NativeAlarmService instance = NativeAlarmService._();
+  NativeAlarmService._internal() {
+    _channel.setMethodCallHandler((call) async {
+      switch (call.method) {
+        case 'onAlarmDismissed':
+          final rawId = call.arguments is Map ? call.arguments['alarmId'] : call.arguments;
+          final alarmId = rawId as int? ?? 1;
+          developer.log(
+            'NativeAlarmService: received onAlarmDismissed for alarm #$alarmId',
+            name: 'NativeAlarmService',
+          );
+          _alarmDismissedController.add(alarmId);
+          AlarmRingingManager.instance.onDismiss?.call();
+          break;
+        case 'onAlarmSnoozed':
+          final args = call.arguments as Map<dynamic, dynamic>? ?? {};
+          final alarmId = args['alarmId'] as int? ?? 1;
+          final snoozeMinutes = args['snoozeMinutes'] as int? ?? 10;
+          developer.log(
+            'NativeAlarmService: received onAlarmSnoozed for alarm #$alarmId ($snoozeMinutes min)',
+            name: 'NativeAlarmService',
+          );
+          _alarmSnoozedController.add({'alarmId': alarmId, 'snoozeMinutes': snoozeMinutes});
+          AlarmRingingManager.instance.onDismiss?.call();
+          break;
+      }
+    });
+  }
+
+  static final NativeAlarmService instance = NativeAlarmService._internal();
 
   static const MethodChannel _channel = MethodChannel('aurora_alarm/native');
+
+  final StreamController<int> _alarmDismissedController =
+      StreamController<int>.broadcast();
+  Stream<int> get onAlarmDismissed => _alarmDismissedController.stream;
+
+  final StreamController<Map<String, int>> _alarmSnoozedController =
+      StreamController<Map<String, int>>.broadcast();
+  Stream<Map<String, int>> get onAlarmSnoozed => _alarmSnoozedController.stream;
 
   bool get _isAndroid =>
       defaultTargetPlatform == TargetPlatform.android || Platform.isAndroid;
