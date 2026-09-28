@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:io';
-import 'package:flutter/widgets.dart';
-import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../features/alarm/models/alarm_model.dart';
 import '../constants/app_constants.dart';
@@ -11,70 +9,8 @@ import 'native_alarm_service.dart';
 import 'notification_service.dart';
 import 'screen_control_service.dart';
 
-/// Top-level callback executed when an exact alarm fires in the background,
-/// even when the application process is completely dead.
-@pragma('vm:entry-point')
-void alarmCallback(int id) async {
-  WidgetsFlutterBinding.ensureInitialized();
-  developer.log('Alarm trigger fired in background isolate with ID: $id',
-      name: 'AlarmService');
-
-  // 1. Wake up the physical screen and bypass lockscreen
-  await ScreenControlService.instance.wakeUpScreen();
-
-  // 2. Initialize notification service
-  await NotificationService.instance.initialize();
-
-  // 3. Find saved alarm metadata from SharedPreferences
-  String alarmTitle = 'Aurora Alarme';
-  String alarmSound = 'Aurora Celestial';
-  bool vibrate = true;
-
-  try {
-    final prefs = await SharedPreferences.getInstance();
-    final alarmsJson = prefs.getString(AppConstants.keyAlarms);
-    if (alarmsJson != null) {
-      final List<dynamic> list = jsonDecode(alarmsJson);
-      final alarms = list.map((e) => AlarmModel.fromJson(e)).toList();
-      final currentAlarm = alarms.firstWhere((a) => a.id == id,
-          orElse: () => AlarmModel(
-                id: id,
-                hour: DateTime.now().hour,
-                minute: DateTime.now().minute,
-              ));
-
-      alarmTitle = currentAlarm.label;
-      alarmSound = currentAlarm.sound;
-      vibrate = currentAlarm.vibrate;
-
-      // If repeating alarm, schedule the next recurrence
-      if (currentAlarm.repeatDays.isNotEmpty) {
-        AlarmService.instance.scheduleAlarm(currentAlarm);
-      }
-    }
-  } catch (e) {
-    developer.log('Error reading alarm metadata in background callback: $e',
-        name: 'AlarmService');
-  }
-
-  // 4. Start looping ringtone and rhythmic vibration
-  await AudioRingtoneService.instance.startAlarmRingtone(
-    vibrate: vibrate,
-    soundName: alarmSound,
-  );
-
-  // 5. Display high-priority full-screen intent notification
-  await NotificationService.instance.showAlarmNotification(
-    id: id,
-    title: alarmTitle,
-    body: 'Hora de acordar com as cores da aurora!',
-    payload: id.toString(),
-  );
-
-  // 6. Attempt direct full-screen activity start with NEW_TASK/CLEAR_TOP flags
-  await ScreenControlService.instance.launchAlarmFullScreen(id, payload: id.toString());
-}
-
+/// Central Alarm Service responsible for orchestrating alarm lifecycle
+/// using exclusively the native Kotlin AlarmScheduler (setAlarmClock).
 class AlarmService {
   AlarmService._();
   static final AlarmService instance = AlarmService._();
@@ -83,14 +19,9 @@ class AlarmService {
 
   Future<void> initialize() async {
     if (_initialized) return;
-
-    if (Platform.isAndroid) {
-      await AndroidAlarmManager.initialize();
-    }
-
     _initialized = true;
 
-    // Reschedule all active alarms on startup (handles device reboots)
+    // Reschedule all active alarms on startup via NativeAlarmService (handles device reboots)
     await rescheduleAllActiveAlarms();
   }
 
@@ -131,7 +62,7 @@ class AlarmService {
     return target;
   }
 
-  /// Schedules an exact alarm with native Kotlin AlarmScheduler (setAlarmClock)
+  /// Schedules an exact alarm using exclusively the native Kotlin AlarmScheduler (setAlarmClock)
   Future<bool> scheduleAlarm(AlarmModel alarm) async {
     if (!Platform.isAndroid) return false;
 
@@ -159,21 +90,27 @@ class AlarmService {
     return scheduled;
   }
 
-  /// Cancels an existing alarm schedule and stops active ringtones
+  /// Cancels an existing alarm schedule exclusively via NativeAlarmService
   Future<bool> cancelAlarm(int id) async {
     await NotificationService.instance.cancel(id);
     await AudioRingtoneService.instance.stop();
     await ScreenControlService.instance.dismissLockscreen();
 
     if (!Platform.isAndroid) return false;
-    final nativeCancelled = await NativeAlarmService.instance.cancelAlarm(id);
-    try {
-      await AndroidAlarmManager.cancel(id);
-    } catch (_) {}
-    return nativeCancelled;
+    return await NativeAlarmService.instance.cancelAlarm(id);
   }
 
-  /// Reads all saved alarms from SharedPreferences and schedules any enabled ones
+  /// Cancels all scheduled native alarms
+  Future<bool> cancelAllAlarms([List<int>? ids]) async {
+    await NotificationService.instance.cancelAll();
+    await AudioRingtoneService.instance.stop();
+    await ScreenControlService.instance.dismissLockscreen();
+
+    if (!Platform.isAndroid) return false;
+    return await NativeAlarmService.instance.cancelAllAlarms(ids);
+  }
+
+  /// Reads all saved alarms from SharedPreferences and schedules any enabled ones natively
   Future<void> rescheduleAllActiveAlarms() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -198,7 +135,7 @@ class AlarmService {
     }
   }
 
-  /// Snoozes an alarm by scheduling it for X minutes in the future
+  /// Snoozes an alarm by scheduling it natively for X minutes in the future
   Future<void> snoozeAlarm(AlarmModel alarm, {int minutes = 5}) async {
     await AudioRingtoneService.instance.stop();
     await NotificationService.instance.cancel(alarm.id);

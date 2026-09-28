@@ -40,7 +40,27 @@ class AlarmNotifier extends Notifier<List<AlarmModel>> {
       final alarmsJson = prefs.getString(AppConstants.keyAlarms);
       if (alarmsJson != null) {
         final List<dynamic> decoded = jsonDecode(alarmsJson);
-        state = decoded.map((item) => AlarmModel.fromJson(item)).toList();
+        var alarms = decoded.map((item) => AlarmModel.fromJson(item)).toList();
+
+        // Check if any one-shot alarms were dismissed natively while app was terminated
+        bool changed = false;
+        alarms = alarms.map((alarm) {
+          final dismissedKey = 'dismissed_alarm_${alarm.id}';
+          final wasDismissed = prefs.getBool(dismissedKey) ?? false;
+          if (wasDismissed) {
+            prefs.remove(dismissedKey);
+            if (alarm.repeatDays.isEmpty && alarm.isEnabled) {
+              changed = true;
+              return alarm.copyWith(isEnabled: false);
+            }
+          }
+          return alarm;
+        }).toList();
+
+        state = alarms;
+        if (changed) {
+          await _saveAlarms(alarms);
+        }
       }
     } catch (_) {}
   }
@@ -111,13 +131,19 @@ class AlarmNotifier extends Notifier<List<AlarmModel>> {
       if (index != -1) {
         final alarm = state[index];
         if (alarm.repeatDays.isEmpty) {
-          // One-shot alarm: automatically toggle off after dismiss
-          await toggleAlarm(alarmId);
+          // One-shot alarm: automatically toggle off switch in state and persist
+          state = state.map((a) => a.id == alarmId ? a.copyWith(isEnabled: false) : a).toList();
+          await _saveAlarms(state);
         } else {
           // Recurring alarm: schedule next occurrence
           _scheduleAlarm(alarm);
         }
       }
+    });
+
+    NativeAlarmService.instance.onAlarmSnoozed.listen((data) {
+      // Alarm was snoozed (+X min): ensure state triggers UI refresh
+      state = [...state];
     });
   }
 }

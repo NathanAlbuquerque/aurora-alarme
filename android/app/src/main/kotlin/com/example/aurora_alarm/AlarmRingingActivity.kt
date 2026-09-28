@@ -219,7 +219,17 @@ class AlarmRingingActivity : Activity() {
             Log.e(TAG, "Error cancelling notification: ${e.message}")
         }
 
-        // 2. Notify Flutter via NativeAlarmBridge
+        // 2. Mark alarm as dismissed in shared preferences for Flutter offline sync
+        try {
+            getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+                .edit()
+                .putBoolean("flutter.dismissed_alarm_$alarmId", true)
+                .apply()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error marking alarm dismissed in prefs: ${e.message}")
+        }
+
+        // 3. Notify Flutter via NativeAlarmBridge
         NativeAlarmBridge.notifyAlarmDismissed(alarmId)
 
         // 3. If challenge is required, route to Flutter UI

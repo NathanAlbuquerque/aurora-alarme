@@ -30,41 +30,25 @@ class MainActivity : FlutterActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        wakeAndShowOverLockscreen()
         handleIncomingIntent(intent)
-    }
-
-    override fun onStart() {
-        super.onStart()
-        wakeAndShowOverLockscreen()
     }
 
     override fun onResume() {
         super.onResume()
-        wakeAndShowOverLockscreen()
-        latestAlarmPayload?.let { payload ->
-            Log.d(TAG, "onResume: dispatching pending latestAlarmPayload='$payload'")
-            methodChannel?.invokeMethod("onAlarmTriggered", payload)
+        if (latestAlarmPayload?.startsWith("challenge:") == true ||
+            latestAlarmPayload?.startsWith("ring:") == true) {
+            wakeAndShowOverLockscreen()
+            latestAlarmPayload?.let { payload ->
+                Log.d(TAG, "onResume: dispatching pending challenge payload='$payload'")
+                methodChannel?.invokeMethod("onAlarmTriggered", payload)
+            }
         }
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        wakeAndShowOverLockscreen()
         handleIncomingIntent(intent)
-    }
-
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
-        wakeAndShowOverLockscreen()
-    }
-
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
-        super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) {
-            wakeAndShowOverLockscreen()
-        }
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -254,16 +238,13 @@ class MainActivity : FlutterActivity() {
         val payload = intent.getStringExtra("payload")
             ?: intent.getStringExtra("notification_payload")
             ?: intent.getStringExtra("notificationPayload")
-            ?: if (intent.hasExtra("notificationId")) intent.getIntExtra("notificationId", 0).toString()
-            else if (intent.hasExtra("notification_id")) intent.getIntExtra("notification_id", 0).toString()
-            else if (intent.hasExtra("alarm_id")) intent.getIntExtra("alarm_id", 0).toString()
-            else if (intent.hasExtra("alarmId")) intent.getIntExtra("alarmId", 0).toString()
-            else null
 
         Log.d(TAG, "handleIncomingIntent: extracted payload='$payload', action=${intent.action}")
 
-        if (!payload.isNullOrEmpty()) {
+        // Only dispatch if it's explicitly a challenge from AlarmRingingActivity or a test simulation
+        if (!payload.isNullOrEmpty() && (payload.startsWith("challenge:") || payload.startsWith("ring:"))) {
             latestAlarmPayload = payload
+            wakeAndShowOverLockscreen()
             methodChannel?.invokeMethod("onAlarmTriggered", payload)
         }
     }
@@ -339,20 +320,20 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun launchAlarmFullScreen(payload: String?, alarmId: Int?) {
-        wakeAndShowOverLockscreen()
-        val launchIntent = Intent(this, MainActivity::class.java).apply {
-            action = "com.aurora.alarm.RING"
+        val launchIntent = Intent(this, AlarmRingingActivity::class.java).apply {
+            action = "com.aurora.alarm.RING_NATIVE"
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                     Intent.FLAG_ACTIVITY_CLEAR_TOP or
                     Intent.FLAG_ACTIVITY_SINGLE_TOP or
                     Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-            putExtra("payload", payload ?: (alarmId?.toString() ?: "1"))
-            if (alarmId != null) putExtra("alarm_id", alarmId)
+            val id = alarmId ?: (payload?.replace("challenge:", "")?.replace("ring:", "")?.toIntOrNull() ?: 1)
+            putExtra(AlarmScheduler.EXTRA_ALARM_ID, id)
+            putExtra("payload", payload ?: id.toString())
         }
         try {
             startActivity(launchIntent)
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to launch alarm full screen: ${e.message}")
+            Log.e(TAG, "Failed to launch native alarm ringing activity: ${e.message}")
         }
     }
 

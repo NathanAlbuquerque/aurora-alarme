@@ -238,10 +238,20 @@ class AlarmReceiver : BroadcastReceiver() {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
         notificationManager?.cancel(alarmId)
 
-        // 3. Close AlarmRingingActivity if visible
+        // 3. Mark alarm as dismissed in shared preferences for Flutter offline sync
+        try {
+            context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+                .edit()
+                .putBoolean("flutter.dismissed_alarm_$alarmId", true)
+                .apply()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error saving dismissed alarm to prefs: ${e.message}")
+        }
+
+        // 4. Close AlarmRingingActivity if visible
         AlarmRingingActivity.finishIfActive(alarmId)
 
-        // 4. Notify Flutter
+        // 5. Notify Flutter
         NativeAlarmBridge.notifyAlarmDismissed(alarmId)
     }
 
