@@ -6,13 +6,15 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('AlarmSounds Catalog Tests', () {
-    test('contains the 3 built-in sounds', () {
-      expect(AlarmSounds.all.length, 3);
+    test('contains the 5 built-in sounds', () {
+      expect(AlarmSounds.all.length, 5);
 
       final ids = AlarmSounds.all.map((s) => s.id).toList();
       expect(ids, contains('dan-da-dan'));
       expect(ids, contains('kompa'));
       expect(ids, contains('santa-fe'));
+      expect(ids, contains('slay'));
+      expect(ids, contains('that-one-br-kid'));
 
       for (var sound in AlarmSounds.all) {
         expect(sound.path, startsWith('assets/sounds/'));

@@ -42,6 +42,16 @@ class AlarmSounds {
       name: 'Santa Fe',
       path: 'assets/sounds/ringtone-santa-fe.ogg',
     ),
+    AlarmSound(
+      id: 'slay',
+      name: 'Slay',
+      path: 'assets/sounds/ringtone-slay.ogg',
+    ),
+    AlarmSound(
+      id: 'that-one-br-kid',
+      name: 'That One BR Kid',
+      path: 'assets/sounds/ringtone-that-one-br-kid.ogg',
+    ),
   ];
 
   static const AlarmSound defaultSound = AlarmSound(
@@ -79,6 +89,14 @@ class AlarmSounds {
         normalized.contains('solar') ||
         normalized.contains('fe')) {
       return all[2]; // Santa Fe
+    }
+    if (normalized.contains('slay')) {
+      return all[3]; // Slay
+    }
+    if (normalized.contains('kid') ||
+        normalized.contains('br') ||
+        normalized.contains('that-one')) {
+      return all[4]; // That One BR Kid
     }
 
     return defaultSound;

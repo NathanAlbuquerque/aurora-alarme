@@ -180,6 +180,8 @@ object NativeAlarmSoundPlayer {
     private fun resolveSoundAssetPath(soundName: String?): String {
         val clean = soundName?.lowercase()?.trim() ?: ""
         return when {
+            clean.contains("slay") -> "flutter_assets/assets/sounds/ringtone-slay.ogg"
+            clean.contains("kid") || clean.contains("that-one") || clean.contains("br") -> "flutter_assets/assets/sounds/ringtone-that-one-br-kid.ogg"
             clean.contains("kompa") -> "flutter_assets/assets/sounds/ringtone-kompa.ogg"
             clean.contains("santa") || clean.contains("fe") -> "flutter_assets/assets/sounds/ringtone-santa-fe.ogg"
             clean.contains("dan") -> "flutter_assets/assets/sounds/ringtone-dan-da-dan.ogg"
