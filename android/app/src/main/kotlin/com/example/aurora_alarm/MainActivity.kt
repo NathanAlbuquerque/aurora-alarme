@@ -228,6 +228,20 @@ class MainActivity : FlutterActivity() {
             }
         }
 
+        // Bridge NativeAlarmBridge events (dismiss/snooze from AlarmRingingActivity) to Flutter
+        NativeAlarmBridge.setListener(object : NativeAlarmBridge.AlarmEventListener {
+            override fun onAlarmDismissed(alarmId: Int) {
+                nativeMethodChannel?.invokeMethod("onAlarmDismissed", mapOf("alarmId" to alarmId))
+            }
+
+            override fun onAlarmSnoozed(alarmId: Int, snoozeMinutes: Int) {
+                nativeMethodChannel?.invokeMethod(
+                    "onAlarmSnoozed",
+                    mapOf("alarmId" to alarmId, "snoozeMinutes" to snoozeMinutes)
+                )
+            }
+        })
+
         // If an intent arrived before Flutter engine finished configuring, dispatch it now
         latestAlarmPayload?.let { payload ->
             Log.d(TAG, "configureFlutterEngine: dispatching latestAlarmPayload='$payload'")
@@ -343,6 +357,7 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onDestroy() {
+        NativeAlarmBridge.setListener(null)
         try {
             if (wakeLock?.isHeld == true) {
                 wakeLock?.release()

@@ -1,4 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#070913</color>
+    <color name="dark_void">#07080F</color>
+    <color name="dark_cosmic">#100B22</color>
+    <color name="neon_cyan">#00E5FF</color>
+    <color name="neon_cyan_glow">#3300E5FF</color>
+    <color name="plasma_violet">#7B2CBF</color>
+    <color name="supernova_pink">#FF007F</color>
+    <color name="supernova_pink_dark">#D0006F</color>
+    <color name="electric_amber">#FFE600</color>
+    <color name="card_dark">#151326</color>
+    <color name="card_border">#2E2752</color>
+    <color name="text_white">#FFFFFF</color>
+    <color name="text_muted">#8F9CAE</color>
 </resources>

@@ -19,4 +19,13 @@
         <item name="android:showWhenLocked">true</item>
         <item name="android:turnScreenOn">true</item>
     </style>
+
+    <!-- Full-Screen Native Alarm Theme for lockscreen display -->
+    <style name="AlarmRingingTheme" parent="@android:style/Theme.NoTitleBar.Fullscreen">
+        <item name="android:windowBackground">@color/dark_void</item>
+        <item name="android:showWhenLocked">true</item>
+        <item name="android:turnScreenOn">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFullscreen">true</item>
+    </style>
 </resources>
