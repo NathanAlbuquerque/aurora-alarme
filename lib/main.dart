@@ -43,40 +43,47 @@ class _AuroraAlarmAppState extends ConsumerState<AuroraAlarmApp> {
   void initState() {
     super.initState();
 
-    // 1. Listen for notification payload taps
+    // 1. Listen for notification payload taps (only if explicitly a challenge or ring simulation)
     NotificationService.instance.onNotificationPayload.stream.listen((payload) {
-      if (payload != null && payload.isNotEmpty) {
+      if (payload != null &&
+          (payload.startsWith('challenge:') || payload.startsWith('ring:'))) {
         _navigateToRingingScreen(payload);
       }
     });
 
-    // 2. Listen for native Android onAlarmTriggered (e.g. from onNewIntent / Full-Screen Intent)
+    // 2. Listen for native Android onAlarmTriggered (e.g. from AlarmRingingActivity challenge transition)
     ScreenControlService.instance.onAlarmTriggered.listen((payload) {
-      if (payload.isNotEmpty) {
+      if (payload.isNotEmpty &&
+          (payload.startsWith('challenge:') || payload.startsWith('ring:'))) {
         _navigateToRingingScreen(payload);
       }
     });
 
-    // 3. Check if app was launched directly by notification or native full-screen intent
+    // 3. Check if app was launched directly with a challenge payload
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final initialNotificationPayload =
           await NotificationService.instance.getInitialPayload();
       if (initialNotificationPayload != null &&
-          initialNotificationPayload.isNotEmpty) {
+          (initialNotificationPayload.startsWith('challenge:') ||
+              initialNotificationPayload.startsWith('ring:'))) {
         _navigateToRingingScreen(initialNotificationPayload);
         return;
       }
 
       final initialNativePayload =
           await ScreenControlService.instance.getInitialAlarmPayload();
-      if (initialNativePayload != null && initialNativePayload.isNotEmpty) {
+      if (initialNativePayload != null &&
+          (initialNativePayload.startsWith('challenge:') ||
+              initialNativePayload.startsWith('ring:'))) {
         _navigateToRingingScreen(initialNativePayload);
       }
     });
   }
 
   Future<void> _navigateToRingingScreen(String payload) async {
-    final alarmId = int.tryParse(payload) ?? 1;
+    final cleanPayload =
+        payload.replaceFirst('challenge:', '').replaceFirst('ring:', '');
+    final alarmId = int.tryParse(cleanPayload) ?? 1;
 
     // Prevent duplicate triggers if the exact alarm is already ringing on screen
     if (AlarmRingingManager.instance.isRinging &&

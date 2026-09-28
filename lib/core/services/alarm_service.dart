@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../features/alarm/models/alarm_model.dart';
 import '../constants/app_constants.dart';
 import 'audio_ringtone_service.dart';
+import 'native_alarm_service.dart';
 import 'notification_service.dart';
 import 'screen_control_service.dart';
 
@@ -130,7 +131,7 @@ class AlarmService {
     return target;
   }
 
-  /// Schedules an exact alarm with Android AlarmManager
+  /// Schedules an exact alarm with native Kotlin AlarmScheduler (setAlarmClock)
   Future<bool> scheduleAlarm(AlarmModel alarm) async {
     if (!Platform.isAndroid) return false;
 
@@ -141,20 +142,21 @@ class AlarmService {
     );
 
     developer.log(
-      'Scheduling exact alarm #${alarm.id} at $targetTime (alarmClock: true, wakeup: true)',
+      'Scheduling exact native alarm #${alarm.id} at $targetTime (title: ${alarm.label})',
       name: 'AlarmService',
     );
 
-    return await AndroidAlarmManager.oneShotAt(
-      targetTime,
-      alarm.id,
-      alarmCallback,
-      exact: true,
-      wakeup: true,
-      alarmClock: true, // Wakes up over lockscreen & exempt from Doze
-      allowWhileIdle: true,
-      rescheduleOnReboot: true,
+    final scheduled = await NativeAlarmService.instance.scheduleAlarm(
+      id: alarm.id,
+      triggerTime: targetTime,
+      title: alarm.label,
+      sound: alarm.sound,
+      vibrate: alarm.vibrate,
+      mission: alarm.mission,
+      snoozeMinutes: alarm.snoozeMinutes,
     );
+
+    return scheduled;
   }
 
   /// Cancels an existing alarm schedule and stops active ringtones
@@ -164,7 +166,11 @@ class AlarmService {
     await ScreenControlService.instance.dismissLockscreen();
 
     if (!Platform.isAndroid) return false;
-    return await AndroidAlarmManager.cancel(id);
+    final nativeCancelled = await NativeAlarmService.instance.cancelAlarm(id);
+    try {
+      await AndroidAlarmManager.cancel(id);
+    } catch (_) {}
+    return nativeCancelled;
   }
 
   /// Reads all saved alarms from SharedPreferences and schedules any enabled ones
@@ -182,7 +188,7 @@ class AlarmService {
           }
         }
         developer.log(
-          'Successfully rescheduled ${alarms.where((a) => a.isEnabled).length} active alarms',
+          'Successfully rescheduled ${alarms.where((a) => a.isEnabled).length} active alarms natively',
           name: 'AlarmService',
         );
       }
@@ -202,19 +208,18 @@ class AlarmService {
 
     final snoozeTime = DateTime.now().add(Duration(minutes: minutes));
     developer.log(
-      'Snoozing alarm #${alarm.id} until $snoozeTime',
+      'Snoozing alarm #${alarm.id} natively until $snoozeTime',
       name: 'AlarmService',
     );
 
-    await AndroidAlarmManager.oneShotAt(
-      snoozeTime,
-      alarm.id,
-      alarmCallback,
-      exact: true,
-      wakeup: true,
-      alarmClock: true,
-      allowWhileIdle: true,
-      rescheduleOnReboot: true,
+    await NativeAlarmService.instance.scheduleAlarm(
+      id: alarm.id,
+      triggerTime: snoozeTime,
+      title: alarm.label,
+      sound: alarm.sound,
+      vibrate: alarm.vibrate,
+      mission: alarm.mission,
+      snoozeMinutes: minutes,
     );
   }
 

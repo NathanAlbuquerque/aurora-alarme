@@ -3,12 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/services/alarm_service.dart';
+import '../../../core/services/native_alarm_service.dart';
 import '../models/alarm_model.dart';
 
 class AlarmNotifier extends Notifier<List<AlarmModel>> {
+  bool _listeningToNative = false;
+
   @override
   List<AlarmModel> build() {
     _loadAlarms();
+    _setupNativeListeners();
     // Default starter alarms
     return [
       const AlarmModel(
@@ -96,6 +100,25 @@ class AlarmNotifier extends Notifier<List<AlarmModel>> {
 
   void _scheduleAlarm(AlarmModel alarm) {
     AlarmService.instance.scheduleAlarm(alarm);
+  }
+
+  void _setupNativeListeners() {
+    if (_listeningToNative) return;
+    _listeningToNative = true;
+
+    NativeAlarmService.instance.onAlarmDismissed.listen((alarmId) async {
+      final index = state.indexWhere((a) => a.id == alarmId);
+      if (index != -1) {
+        final alarm = state[index];
+        if (alarm.repeatDays.isEmpty) {
+          // One-shot alarm: automatically toggle off after dismiss
+          await toggleAlarm(alarmId);
+        } else {
+          // Recurring alarm: schedule next occurrence
+          _scheduleAlarm(alarm);
+        }
+      }
+    });
   }
 }
 
