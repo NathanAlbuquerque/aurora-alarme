@@ -88,7 +88,7 @@ class AlarmScheduler(private val context: Context) {
             // 2. PendingIntent used by the system UI when the user taps on the alarm clock in the lockscreen/status bar
             val showIntent = Intent(context, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                putExtra("payload", id.toString())
+                putExtra("action", "view_alarm")
                 putExtra(EXTRA_ALARM_ID, id)
             }
 
