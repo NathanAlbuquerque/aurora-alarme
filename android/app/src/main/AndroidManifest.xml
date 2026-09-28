@@ -57,14 +57,23 @@
         <!-- Native Aurora Alarm Ringing Activity for lockscreen display -->
         <activity
             android:name=".AlarmRingingActivity"
-            android:exported="false"
+            android:exported="true"
             android:showWhenLocked="true"
             android:turnScreenOn="true"
             android:inheritShowWhenLocked="true"
-            android:launchMode="singleTask"
+            android:taskAffinity=""
+            android:launchMode="singleInstance"
             android:excludeFromRecents="true"
+            android:noHistory="false"
+            android:screenOrientation="portrait"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|screenLayout|density|uiMode"
-            android:theme="@style/AlarmRingingTheme" />
+            android:theme="@style/AlarmRingingTheme"
+            android:windowSoftInputMode="stateAlwaysHidden">
+            <intent-filter>
+                <action android:name="com.aurora.alarm.RING_NATIVE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
 
         <!-- Native Aurora Alarm BroadcastReceiver for exact setAlarmClock() triggers -->
         <receiver

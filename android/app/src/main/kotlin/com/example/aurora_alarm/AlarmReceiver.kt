@@ -1,5 +1,6 @@
 package com.example.aurora_alarm
 
+import android.app.ActivityOptions
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -29,7 +30,7 @@ class AlarmReceiver : BroadcastReceiver() {
         const val ACTION_ALARM_TRIGGER = "com.aurora.alarm.ACTION_ALARM_TRIGGER"
         const val ACTION_DISMISS = "com.aurora.alarm.ACTION_DISMISS"
         const val ACTION_SNOOZE = "com.aurora.alarm.ACTION_SNOOZE"
-        const val NOTIFICATION_CHANNEL_ID = "aurora_native_alarm_channel"
+        const val NOTIFICATION_CHANNEL_ID = "aurora_native_alarm_channel_v2"
         private const val NOTIFICATION_CHANNEL_NAME = "Disparo de Alarme Aurora"
     }
 
@@ -66,16 +67,19 @@ class AlarmReceiver : BroadcastReceiver() {
         mission: String,
         snoozeMinutes: Int
     ) {
-        // 0. Acquire temporary partial WakeLock during intent handling
+        // 0. Acquire hardware screen WakeLock to wake up display immediately
         try {
             val powerManager = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
             @Suppress("DEPRECATION")
             val wakeLock = powerManager?.newWakeLock(
-                PowerManager.PARTIAL_WAKE_LOCK or PowerManager.ACQUIRE_CAUSES_WAKEUP,
-                "aurora_alarm:AlarmReceiverWakeLock"
+                PowerManager.SCREEN_BRIGHT_WAKE_LOCK or
+                PowerManager.ACQUIRE_CAUSES_WAKEUP or
+                PowerManager.ON_AFTER_RELEASE,
+                "aurora_alarm:AlarmReceiverScreenWakeLock"
             )
-            wakeLock?.acquire(3 * 60 * 1000L /* 3 minutes */)
-            Log.d(TAG, "Acquired partial WakeLock in AlarmReceiver")
+            wakeLock?.setReferenceCounted(false)
+            wakeLock?.acquire(60 * 1000L /* 60 seconds */)
+            Log.d(TAG, "Acquired screen bright WakeLock in AlarmReceiver")
         } catch (e: Exception) {
             Log.e(TAG, "Error acquiring WakeLock in AlarmReceiver: ${e.message}")
         }
@@ -109,14 +113,15 @@ class AlarmReceiver : BroadcastReceiver() {
             Log.e(TAG, "Failed to post high-priority notification: ${e.message}", e)
         }
 
-        // 3. Abrir a AlarmRingingActivity imediatamente com as flags corretas
+        // 3. Abrir a AlarmRingingActivity imediatamente com as flags mais agressivas possíveis e opções de BAL
         try {
             val ringingIntent = Intent(context, AlarmRingingActivity::class.java).apply {
                 this.action = "com.aurora.alarm.RING_NATIVE"
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                         Intent.FLAG_ACTIVITY_CLEAR_TOP or
                         Intent.FLAG_ACTIVITY_SINGLE_TOP or
-                        Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                        Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
+                        Intent.FLAG_ACTIVITY_NO_USER_ACTION
                 putExtra(AlarmScheduler.EXTRA_ALARM_ID, alarmId)
                 putExtra(AlarmScheduler.EXTRA_TITLE, title)
                 putExtra(AlarmScheduler.EXTRA_SOUND, sound)
@@ -125,8 +130,47 @@ class AlarmReceiver : BroadcastReceiver() {
                 putExtra(AlarmScheduler.EXTRA_SNOOZE_MINUTES, snoozeMinutes)
                 putExtra("payload", alarmId.toString())
             }
-            context.startActivity(ringingIntent)
-            Log.d(TAG, "AlarmRingingActivity launched successfully for alarm #$alarmId")
+
+            val optionsBundle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                ActivityOptions.makeBasic().apply {
+                    setPendingIntentBackgroundActivityStartMode(
+                        ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+                    )
+                }.toBundle()
+            } else {
+                null
+            }
+
+            // A. Iniciar diretamente via context.startActivity com options de BAL
+            try {
+                if (optionsBundle != null) {
+                    context.startActivity(ringingIntent, optionsBundle)
+                } else {
+                    context.startActivity(ringingIntent)
+                }
+                Log.d(TAG, "AlarmRingingActivity started via context.startActivity for alarm #$alarmId")
+            } catch (se: Exception) {
+                Log.w(TAG, "context.startActivity warning: ${se.message}")
+            }
+
+            // B. Também disparar via PendingIntent com privilégios explícitos de Background Activity Launch (BAL)
+            try {
+                val directPendingIntent = PendingIntent.getActivity(
+                    context,
+                    alarmId + 500000,
+                    ringingIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                    optionsBundle
+                )
+                if (optionsBundle != null) {
+                    directPendingIntent.send(context, 0, null, null, null, null, optionsBundle)
+                } else {
+                    directPendingIntent.send()
+                }
+                Log.d(TAG, "directPendingIntent.send executed for alarm #$alarmId")
+            } catch (pe: Exception) {
+                Log.w(TAG, "directPendingIntent.send warning: ${pe.message}")
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to launch AlarmRingingActivity: ${e.message}", e)
         }
@@ -143,8 +187,12 @@ class AlarmReceiver : BroadcastReceiver() {
     ) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        // Create Notification Channel with MAX/HIGH importance for Android 8.0+
+        // Create Notification Channel with HIGH importance for Android 8.0+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            try {
+                notificationManager.deleteNotificationChannel("aurora_native_alarm_channel")
+            } catch (_: Exception) {}
+
             val channel = NotificationChannel(
                 NOTIFICATION_CHANNEL_ID,
                 NOTIFICATION_CHANNEL_NAME,
@@ -153,8 +201,10 @@ class AlarmReceiver : BroadcastReceiver() {
                 description = "Notificações de alta prioridade para o disparo do alarme"
                 lockscreenVisibility = Notification.VISIBILITY_PUBLIC
                 enableVibration(true)
+                vibrationPattern = longArrayOf(0, 500, 200, 500)
                 setShowBadge(true)
                 setBypassDnd(true)
+                setSound(null, null) // Audio is handled loopingly by NativeAlarmSoundPlayer
             }
             notificationManager.createNotificationChannel(channel)
         }
@@ -165,7 +215,8 @@ class AlarmReceiver : BroadcastReceiver() {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                     Intent.FLAG_ACTIVITY_CLEAR_TOP or
                     Intent.FLAG_ACTIVITY_SINGLE_TOP or
-                    Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                    Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
+                    Intent.FLAG_ACTIVITY_NO_USER_ACTION
             putExtra(AlarmScheduler.EXTRA_ALARM_ID, alarmId)
             putExtra(AlarmScheduler.EXTRA_TITLE, title)
             putExtra(AlarmScheduler.EXTRA_SOUND, sound)
@@ -175,11 +226,22 @@ class AlarmReceiver : BroadcastReceiver() {
             putExtra("payload", alarmId.toString())
         }
 
+        val optionsBundle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            ActivityOptions.makeBasic().apply {
+                setPendingIntentBackgroundActivityStartMode(
+                    ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+                )
+            }.toBundle()
+        } else {
+            null
+        }
+
         val fullScreenPendingIntent = PendingIntent.getActivity(
             context,
             alarmId,
             ringingIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            optionsBundle
         )
 
         // Action Intent for Dismiss ("Desligar")
@@ -220,6 +282,7 @@ class AlarmReceiver : BroadcastReceiver() {
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOngoing(true)
             .setAutoCancel(false)
+            .setSilent(true)
             .setContentIntent(fullScreenPendingIntent)
             .setFullScreenIntent(fullScreenPendingIntent, true)
             .addAction(0, "Desligar", dismissPendingIntent)

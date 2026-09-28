@@ -325,7 +325,8 @@ class MainActivity : FlutterActivity() {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                     Intent.FLAG_ACTIVITY_CLEAR_TOP or
                     Intent.FLAG_ACTIVITY_SINGLE_TOP or
-                    Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                    Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
+                    Intent.FLAG_ACTIVITY_NO_USER_ACTION
             val id = alarmId ?: (payload?.replace("challenge:", "")?.replace("ring:", "")?.toIntOrNull() ?: 1)
             putExtra(AlarmScheduler.EXTRA_ALARM_ID, id)
             putExtra("payload", payload ?: id.toString())

@@ -10,6 +10,9 @@ import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
 import android.util.Log
+import android.view.View
+import android.view.WindowInsets
+import android.view.WindowInsetsController
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.TextView
@@ -70,23 +73,25 @@ class AlarmRingingActivity : Activity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // 1. Wake physical display and enable over-lockscreen presentation BEFORE super.onCreate
+        wakeAndShowOverLockscreen()
         super.onCreate(savedInstanceState)
         activeActivityRef = WeakReference(this)
 
-        // 1. Wake physical display and enable over-lockscreen presentation
-        wakeAndShowOverLockscreen()
+        // 2. Hide system bars immediately for clean full-screen display
+        hideSystemBars()
 
-        // 2. Parse alarm configuration from intent extras
+        // 3. Parse alarm configuration from intent extras
         parseAlarmIntent(intent)
 
-        // 3. Set modern Aurora-themed XML layout
+        // 4. Set modern Aurora-themed XML layout
         setContentView(R.layout.activity_alarm_ringing)
         initViews()
 
-        // 4. Start live clock updates
+        // 5. Start live clock updates
         timeHandler.post(clockRunnable)
 
-        // 5. Ensure native audio & vibration loop is playing
+        // 6. Ensure native audio & vibration loop is playing
         NativeAlarmSoundPlayer.start(
             context = this,
             alarmId = alarmId,
@@ -97,10 +102,31 @@ class AlarmRingingActivity : Activity() {
         Log.d(TAG, "AlarmRingingActivity created and active for alarm #$alarmId ('$title')")
     }
 
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        wakeAndShowOverLockscreen()
+        hideSystemBars()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        wakeAndShowOverLockscreen()
+        hideSystemBars()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            wakeAndShowOverLockscreen()
+            hideSystemBars()
+        }
+    }
+
     override fun onNewIntent(intent: Intent) {
+        wakeAndShowOverLockscreen()
         super.onNewIntent(intent)
         setIntent(intent)
-        wakeAndShowOverLockscreen()
+        hideSystemBars()
         parseAlarmIntent(intent)
         updateAlarmUi()
 
@@ -174,6 +200,7 @@ class AlarmRingingActivity : Activity() {
             WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
             WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
             WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
+            WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD or
             WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON
         )
 
@@ -196,6 +223,36 @@ class AlarmRingingActivity : Activity() {
             Log.d(TAG, "Screen WakeLock acquired successfully")
         } catch (e: Exception) {
             Log.e(TAG, "Error acquiring WakeLock: ${e.message}")
+        }
+    }
+
+    /**
+     * Hides system status bar and navigation bar for immersive, distraction-free alarm display.
+     */
+    private fun hideSystemBars() {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                window.insetsController?.let { controller ->
+                    controller.hide(
+                        WindowInsets.Type.statusBars() or
+                        WindowInsets.Type.navigationBars()
+                    )
+                    controller.systemBarsBehavior =
+                        WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                }
+            } else {
+                @Suppress("DEPRECATION")
+                window.decorView.systemUiVisibility = (
+                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
+                    View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
+                    View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
+                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                    View.SYSTEM_UI_FLAG_FULLSCREEN or
+                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                )
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error hiding system bars: ${e.message}")
         }
     }
 
