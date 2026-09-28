@@ -17,7 +17,10 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "aurora_alarm/screen_control"
+    private val NATIVE_CHANNEL = "aurora_alarm/native"
     private var methodChannel: MethodChannel? = null
+    private var nativeMethodChannel: MethodChannel? = null
+    private var alarmScheduler: AlarmScheduler? = null
     private var wakeLock: PowerManager.WakeLock? = null
     private var latestAlarmPayload: String? = null
 
@@ -157,6 +160,68 @@ class MainActivity : FlutterActivity() {
                         val alarmId = call.argument<Int>("alarmId")
                         launchAlarmFullScreen(payload, alarmId)
                         result.success(true)
+                    }
+                    else -> result.notImplemented()
+                }
+            }
+        }
+
+        // Initialize Native AlarmScheduler and aurora_alarm/native MethodChannel
+        alarmScheduler = AlarmScheduler(this)
+        nativeMethodChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, NATIVE_CHANNEL).apply {
+            setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "scheduleAlarm" -> {
+                        val id = call.argument<Int>("id") ?: 1
+                        val triggerTime = call.argument<Long>("triggerTimeMillis")
+                            ?: (call.argument<Number>("triggerTime")?.toLong() ?: 0L)
+                        val title = call.argument<String>("title")
+                        val sound = call.argument<String>("sound")
+                        val vibrate = call.argument<Boolean>("vibrate") ?: true
+                        val mission = call.argument<String>("mission")
+                        val snoozeMinutes = call.argument<Int>("snoozeMinutes") ?: 5
+
+                        val success = alarmScheduler?.scheduleAlarm(
+                            id = id,
+                            triggerTimeMillis = triggerTime,
+                            title = title,
+                            sound = sound,
+                            vibrate = vibrate,
+                            mission = mission,
+                            snoozeMinutes = snoozeMinutes
+                        ) ?: false
+                        result.success(success)
+                    }
+                    "cancelAlarm" -> {
+                        val id = call.argument<Int>("id") ?: 1
+                        val success = alarmScheduler?.cancelAlarm(id) ?: false
+                        result.success(success)
+                    }
+                    "cancelAllAlarms" -> {
+                        val ids = call.argument<List<Int>>("ids")
+                        val success = alarmScheduler?.cancelAllAlarms(ids) ?: false
+                        result.success(success)
+                    }
+                    "canScheduleExactAlarms" -> {
+                        val canSchedule = alarmScheduler?.canScheduleExactAlarms() ?: true
+                        result.success(canSchedule)
+                    }
+                    "openExactAlarmSettings" -> {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            try {
+                                val intent = Intent(
+                                    Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
+                                    Uri.parse("package:$packageName")
+                                )
+                                startActivity(intent)
+                                result.success(true)
+                            } catch (e: Exception) {
+                                Log.e(TAG, "Error opening exact alarm settings: ${e.message}")
+                                result.success(false)
+                            }
+                        } else {
+                            result.success(true)
+                        }
                     }
                     else -> result.notImplemented()
                 }

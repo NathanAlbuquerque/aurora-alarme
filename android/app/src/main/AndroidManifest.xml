@@ -54,6 +54,25 @@
             </intent-filter>
         </activity>
 
+        <!-- Native Aurora Alarm Ringing Activity for lockscreen display -->
+        <activity
+            android:name=".AlarmRingingActivity"
+            android:exported="false"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:inheritShowWhenLocked="true"
+            android:launchMode="singleTask"
+            android:theme="@style/LaunchTheme" />
+
+        <!-- Native Aurora Alarm BroadcastReceiver for exact setAlarmClock() triggers -->
+        <receiver
+            android:name=".AlarmReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.aurora.alarm.ACTION_ALARM_TRIGGER" />
+            </intent-filter>
+        </receiver>
+
         <!-- Android Alarm Manager Plus Services and Receivers -->
         <service
             android:name="dev.fluttercommunity.plus.androidalarmmanager.AlarmService"
