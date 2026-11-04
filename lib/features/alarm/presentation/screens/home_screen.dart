@@ -19,6 +19,7 @@ import '../widgets/aurora_clock_widget.dart';
 import '../widgets/empty_alarms_illustration.dart';
 import '../widgets/parallax_alarm_scroll_wrapper.dart';
 import 'add_edit_alarm_screen.dart';
+import 'permission_onboarding_screen.dart';
 
 /// Primary Flagship Screen for Aurora Alarm
 class HomeScreen extends ConsumerStatefulWidget {
@@ -159,7 +160,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ],
               ),
               actions: [
-                // Theme Toggle with Rotation & Scale Micro-Interaction
+                // OEM / Lockscreen Permission Configuration Button
+                ScaleBounceFeedback(
+                  onTap: () {
+                    AppHaptics.lightTap();
+                    PermissionOnboardingScreen.show(
+                      context,
+                      isManualOpen: true,
+                    );
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 8),
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: (isDark
+                              ? AppColors.darkSurface
+                              : AppColors.lightSurface)
+                          .withAlpha(isDark ? 180 : 220),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isDark
+                            ? AppColors.darkBorder
+                            : AppColors.lightBorder,
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.shield_outlined,
+                      color: isDark
+                          ? AppColors.neonCyan
+                          : const Color(0xFF00796B),
+                      size: 20,
+                    ),
+                  ),
+                ),
+
                 // Party Mode / Rave Mode Toggle Button
                 ScaleBounceFeedback(
                   onTap: () {

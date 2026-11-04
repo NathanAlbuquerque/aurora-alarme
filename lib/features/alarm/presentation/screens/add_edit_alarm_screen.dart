@@ -8,6 +8,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/utils/date_time_utils.dart';
 import '../../../../shared/utils/haptic_utils.dart';
+import '../../../../shared/utils/permission_utils.dart';
 import '../../../../shared/widgets/animated_gradient_background.dart';
 import '../../../../shared/widgets/confetti_celebration.dart';
 import '../../../../shared/widgets/exaggerated_neon_switch.dart';
@@ -103,6 +104,8 @@ class _AddEditAlarmScreenState extends ConsumerState<AddEditAlarmScreen> {
     // Delay slightly so the user experiences the explosion & checkmark
     await Future.delayed(const Duration(milliseconds: 750));
 
+    if (!mounted) return;
+    await PermissionUtils.showPermissionOnboardingIfNeeded(context);
     if (!mounted) return;
     Navigator.of(context).pop();
   }

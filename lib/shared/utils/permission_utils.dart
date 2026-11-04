@@ -3,26 +3,25 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/services/screen_control_service.dart';
+import '../../features/alarm/presentation/screens/permission_onboarding_screen.dart';
 import '../widgets/full_screen_intent_dialog.dart';
 
 class PermissionUtils {
   static const String kFullScreenIntentAskedKey = 'full_screen_intent_asked';
+  static const String kPermissionOnboardingSeenKey =
+      'permission_onboarding_seen';
+  static const String kPermissionOnboardingCompletedKey =
+      'permission_onboarding_completed';
 
-  /// Initializes essential alarm permissions on app startup or first alarm creation.
-  /// 
-  /// Flow:
-  /// 1. Requests native notification permission if not yet decided.
-  /// 2. Requests exact alarm permission if not yet decided.
-  /// 3. Checks Full-Screen Intent (Android 14+):
-  ///    - If already granted -> does nothing.
-  ///    - If denied and already asked before -> does nothing (never bugs the user repeatedly).
-  ///    - If denied and never asked -> shows the educational dialog.
-  static Future<void> initPermissions(BuildContext context) async {
+  /// Requests standard runtime Android permissions (Notifications & Exact Alarm)
+  /// without forcing any intrusive settings redirects.
+  static Future<void> requestBasicRuntimePermissions() async {
     if (!Platform.isAndroid) return;
 
     // 1. Notification Permission (Android 13+ / API 33+)
     final notificationStatus = await Permission.notification.status;
-    if (!notificationStatus.isGranted && !notificationStatus.isPermanentlyDenied) {
+    if (!notificationStatus.isGranted &&
+        !notificationStatus.isPermanentlyDenied) {
       await Permission.notification.request();
     }
 
@@ -31,11 +30,63 @@ class PermissionUtils {
     if (!exactAlarmStatus.isGranted && !exactAlarmStatus.isPermanentlyDenied) {
       await Permission.scheduleExactAlarm.request();
     }
+  }
 
-    // 3. Full-Screen Intent check & educational prompt
-    if (context.mounted) {
-      await checkAndPromptFullScreenIntent(context);
+  /// Initializes essential alarm permissions on app startup.
+  ///
+  /// Flow:
+  /// 1. Requests standard notification & exact alarm runtime permissions.
+  /// 2. Checks OEM & critical lockscreen permissions (`ManufacturerPermissionHelper`):
+  ///    - If all critical permissions are granted -> does nothing.
+  ///    - If user already saw/completed the onboarding screen -> does nothing (never nags repeatedly).
+  ///    - If critical permissions are missing and user hasn't seen onboarding -> opens `PermissionOnboardingScreen`.
+  static Future<void> initPermissions(BuildContext context) async {
+    if (!Platform.isAndroid) return;
+
+    await requestBasicRuntimePermissions();
+
+    if (!context.mounted) return;
+    await showPermissionOnboardingIfNeeded(context);
+  }
+
+  /// Checks whether the Permission Onboarding screen should be presented automatically.
+  static Future<bool> shouldShowPermissionOnboarding() async {
+    if (!Platform.isAndroid) return false;
+
+    final status = await ScreenControlService.instance.getPermissionsStatus();
+    if (status.allCriticalGranted) {
+      return false;
     }
+
+    final seen = await wasPermissionOnboardingSeen();
+    final completed = await wasPermissionOnboardingCompleted();
+    if (seen || completed) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /// Shows `PermissionOnboardingScreen` only if critical permissions are missing
+  /// and the user has not yet seen or completed the onboarding flow.
+  static Future<void> showPermissionOnboardingIfNeeded(
+    BuildContext context, {
+    bool force = false,
+  }) async {
+    if (!Platform.isAndroid) return;
+
+    if (force) {
+      if (!context.mounted) return;
+      await PermissionOnboardingScreen.show(context, isManualOpen: true);
+      return;
+    }
+
+    final shouldShow = await shouldShowPermissionOnboarding();
+    if (!shouldShow || !context.mounted) return;
+
+    await setPermissionOnboardingSeen(true);
+    if (!context.mounted) return;
+    await PermissionOnboardingScreen.show(context, isManualOpen: false);
   }
 
   /// Legacy non-intrusive method kept for backward compatibility.
@@ -48,17 +99,46 @@ class PermissionUtils {
       return true;
     }
 
-    final notificationStatus = await Permission.notification.status;
-    if (!notificationStatus.isGranted && !notificationStatus.isPermanentlyDenied) {
-      await Permission.notification.request();
-    }
-
-    final exactAlarmStatus = await Permission.scheduleExactAlarm.status;
-    if (!exactAlarmStatus.isGranted && !exactAlarmStatus.isPermanentlyDenied) {
-      await Permission.scheduleExactAlarm.request();
-    }
-
+    await requestBasicRuntimePermissions();
     return true;
+  }
+
+  /// Checks if the user has already seen the Permission Onboarding screen.
+  static Future<bool> wasPermissionOnboardingSeen() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getBool(kPermissionOnboardingSeenKey) ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Records whether the user has seen the Permission Onboarding screen.
+  static Future<void> setPermissionOnboardingSeen([bool seen = true]) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(kPermissionOnboardingSeenKey, seen);
+    } catch (_) {}
+  }
+
+  /// Checks if the user completed/confirmed the Permission Onboarding screen.
+  static Future<bool> wasPermissionOnboardingCompleted() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getBool(kPermissionOnboardingCompletedKey) ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Records whether the user completed/confirmed the Permission Onboarding screen.
+  static Future<void> setPermissionOnboardingCompleted([
+    bool completed = true,
+  ]) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(kPermissionOnboardingCompletedKey, completed);
+    } catch (_) {}
   }
 
   /// Checks if the user was already asked about Full-Screen Intent permission.
@@ -80,9 +160,6 @@ class PermissionUtils {
   }
 
   /// Verifies Full-Screen Intent permission and prompts user ONLY if needed.
-  /// 
-  /// - If [forcePrompt] is false: only prompts if not granted AND not asked before.
-  /// - If [forcePrompt] is true: prompts whenever permission is denied (e.g. from Settings).
   static Future<void> checkAndPromptFullScreenIntent(
     BuildContext context, {
     bool forcePrompt = false,
@@ -90,28 +167,23 @@ class PermissionUtils {
     if (!Platform.isAndroid) return;
 
     final isGranted = await canUseFullScreenIntent();
-    // 1. If already granted, do nothing!
     if (isGranted) return;
 
-    // 2. If not forcing, check if user was already warned
     if (!forcePrompt) {
       final alreadyAsked = await wasFullScreenIntentAsked();
-      if (alreadyAsked) return; // Do not bother user repeatedly
+      if (alreadyAsked) return;
     }
 
-    // 3. Mark as asked so it won't prompt automatically on future launches
     await setFullScreenIntentAsked(true);
 
     if (!context.mounted) return;
-
-    // 4. Show educational dialog
     await FullScreenIntentDialog.show(context);
   }
 
   /// Checks if Exact Alarm permission is granted
   static Future<bool> hasExactAlarmPermission() async {
     if (!Platform.isAndroid) return true;
-    return await Permission.scheduleExactAlarm.isGranted;
+    return await ScreenControlService.instance.canScheduleExactAlarms();
   }
 
   /// Checks if Full-Screen Intent is permitted (Android 14+)
