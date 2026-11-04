@@ -74,10 +74,11 @@ class AlarmSoundService {
     bool vibrate = false,
   }) async {
     final sound = AlarmSounds.getById(soundIdOrPath);
+    final effectiveVolume = (kDebugMode ? 0.005 : volume).clamp(0.0, 1.0);
 
     // If already playing this exact sound in loop, maintain playback and ensure vibration
     if (isPlaying && _currentlyPlayingSoundId == sound.id) {
-      await _player?.setVolume(volume.clamp(0.0, 1.0));
+      await _player?.setVolume(effectiveVolume);
       if (vibrate && _vibrationTimer == null) {
         _vibrationTimer =
             Timer.periodic(const Duration(milliseconds: 650), (_) {
@@ -102,7 +103,7 @@ class AlarmSoundService {
       final p = player;
       await p.setAsset(sound.path);
       await p.setLoopMode(LoopMode.one);
-      await p.setVolume(volume.clamp(0.0, 1.0));
+      await p.setVolume(effectiveVolume);
       // Crucial: do not await play() because LoopMode.one returns an infinite Future
       unawaited(p.play());
 
@@ -123,7 +124,7 @@ class AlarmSoundService {
         final sound = AlarmSounds.getById(soundIdOrPath);
         await _player!.setAsset(sound.path);
         await _player!.setLoopMode(LoopMode.one);
-        await _player!.setVolume(volume.clamp(0.0, 1.0));
+        await _player!.setVolume(effectiveVolume);
         unawaited(_player!.play());
       } catch (retryErr) {
         debugPrint('[AlarmSoundService] Sound playback retry also failed: $retryErr');
@@ -157,9 +158,10 @@ class AlarmSoundService {
       _currentSoundController.add(sound.id);
 
       final p = player;
+      final effectiveVolume = (kDebugMode ? 0.005 : volume).clamp(0.0, 1.0);
       await p.setAsset(sound.path);
       await p.setLoopMode(LoopMode.off);
-      await p.setVolume(volume.clamp(0.0, 1.0));
+      await p.setVolume(effectiveVolume);
       unawaited(p.play());
 
       // Automatically stop after test duration if not stopped earlier

@@ -26,10 +26,10 @@ object NativeAlarmSoundPlayer {
     /**
      * Volume attenuation factor applied ONLY in DEBUG mode for developer comfort
      * during development and testing (e.g. testing late at night at home).
-     * 0.05f represents 5% of maximum volume.
+     * 0.005f represents 0.5% (less than 1%) of maximum volume.
      * In RELEASE mode, full volume (1.0f) is always enforced.
      */
-    const val DEBUG_ALARM_VOLUME = 0.05f
+    const val DEBUG_ALARM_VOLUME = 0.005f
 
     private var mediaPlayer: MediaPlayer? = null
     private var vibrator: Vibrator? = null
@@ -119,7 +119,7 @@ object NativeAlarmSoundPlayer {
 
                 isLooping = true
                 val targetVolume = if (isDebugBuild(context)) {
-                    Log.i(TAG, "DEBUG build detected: reducing alarm volume to ${(DEBUG_ALARM_VOLUME * 100).toInt()}% ($DEBUG_ALARM_VOLUME) for testing comfort.")
+                    Log.i(TAG, "DEBUG build detected: reducing alarm volume to ${(DEBUG_ALARM_VOLUME * 100)}% ($DEBUG_ALARM_VOLUME) for testing comfort.")
                     DEBUG_ALARM_VOLUME
                 } else {
                     1.0f
