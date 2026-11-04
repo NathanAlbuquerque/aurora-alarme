@@ -21,6 +21,7 @@ class MainActivity : FlutterActivity() {
     private var methodChannel: MethodChannel? = null
     private var nativeMethodChannel: MethodChannel? = null
     private var alarmScheduler: AlarmScheduler? = null
+    private var manufacturerPermissionHelper: ManufacturerPermissionHelper? = null
     private var wakeLock: PowerManager.WakeLock? = null
     private var latestAlarmPayload: String? = null
 
@@ -53,6 +54,8 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        manufacturerPermissionHelper = ManufacturerPermissionHelper(this)
+
         methodChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).apply {
             setMethodCallHandler { call, result ->
                 when (call.method) {
@@ -69,85 +72,53 @@ class MainActivity : FlutterActivity() {
                         latestAlarmPayload = null
                         result.success(payload)
                     }
+                    "getPermissionsStatus" -> {
+                        val helper = manufacturerPermissionHelper ?: ManufacturerPermissionHelper(this@MainActivity)
+                        result.success(helper.getPermissionsStatus())
+                    }
+                    "openManufacturerPermissionSettings" -> {
+                        val helper = manufacturerPermissionHelper ?: ManufacturerPermissionHelper(this@MainActivity)
+                        result.success(helper.openManufacturerPermissionSettings())
+                    }
                     "canUseFullScreenIntent" -> {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                            try {
-                                val nm = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
-                                val canUse = nm?.canUseFullScreenIntent() ?: true
-                                Log.d(TAG, "canUseFullScreenIntent check: $canUse")
-                                result.success(canUse)
-                            } catch (e: Exception) {
-                                Log.e(TAG, "Error checking canUseFullScreenIntent: ${e.message}")
-                                result.success(true)
-                            }
-                        } else {
-                            result.success(true)
-                        }
+                        val helper = manufacturerPermissionHelper ?: ManufacturerPermissionHelper(this@MainActivity)
+                        result.success(helper.canUseFullScreenIntent())
                     }
                     "openFullScreenIntentSettings" -> {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                            try {
-                                val intent = Intent(
-                                    Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT,
-                                    Uri.parse("package:$packageName")
-                                ).apply {
-                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                }
-                                startActivity(intent)
-                                result.success(true)
-                            } catch (e: Exception) {
-                                Log.w(TAG, "ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT not supported, falling back: ${e.message}")
-                                try {
-                                    val fallbackIntent = Intent(
-                                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                                        Uri.parse("package:$packageName")
-                                    ).apply {
-                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                    }
-                                    startActivity(fallbackIntent)
-                                    result.success(true)
-                                } catch (fallbackEx: Exception) {
-                                    Log.e(TAG, "Error opening app settings: ${fallbackEx.message}")
-                                    result.success(false)
-                                }
-                            }
-                        } else {
-                            result.success(true)
-                        }
+                        val helper = manufacturerPermissionHelper ?: ManufacturerPermissionHelper(this@MainActivity)
+                        result.success(helper.openFullScreenIntentSettings())
                     }
                     "canDrawOverlays" -> {
-                        result.success(Settings.canDrawOverlays(this@MainActivity))
+                        val helper = manufacturerPermissionHelper ?: ManufacturerPermissionHelper(this@MainActivity)
+                        result.success(helper.canDrawOverlays())
                     }
                     "openOverlaySettings" -> {
-                        try {
-                            val intent = Intent(
-                                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                                Uri.parse("package:$packageName")
-                            )
-                            startActivity(intent)
-                            result.success(true)
-                        } catch (e: Exception) {
-                            Log.e(TAG, "Error opening overlay settings: ${e.message}")
-                            result.success(false)
-                        }
+                        val helper = manufacturerPermissionHelper ?: ManufacturerPermissionHelper(this@MainActivity)
+                        result.success(helper.openOverlaySettings())
                     }
                     "isBatteryOptimizationIgnored" -> {
-                        val pm = getSystemService(Context.POWER_SERVICE) as? PowerManager
-                        val isIgnored = pm?.isIgnoringBatteryOptimizations(packageName) ?: true
-                        result.success(isIgnored)
+                        val helper = manufacturerPermissionHelper ?: ManufacturerPermissionHelper(this@MainActivity)
+                        result.success(helper.isBatteryOptimizationIgnored())
                     }
                     "requestIgnoreBatteryOptimizations" -> {
-                        try {
-                            val intent = Intent(
-                                Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-                                Uri.parse("package:$packageName")
-                            )
-                            startActivity(intent)
-                            result.success(true)
-                        } catch (e: Exception) {
-                            Log.e(TAG, "Error requesting battery optimizations ignore: ${e.message}")
-                            result.success(false)
-                        }
+                        val helper = manufacturerPermissionHelper ?: ManufacturerPermissionHelper(this@MainActivity)
+                        result.success(helper.openBatteryOptimizationSettings())
+                    }
+                    "canScheduleExactAlarms" -> {
+                        val helper = manufacturerPermissionHelper ?: ManufacturerPermissionHelper(this@MainActivity)
+                        result.success(helper.canScheduleExactAlarms())
+                    }
+                    "openExactAlarmSettings" -> {
+                        val helper = manufacturerPermissionHelper ?: ManufacturerPermissionHelper(this@MainActivity)
+                        result.success(helper.openExactAlarmSettings())
+                    }
+                    "openNotificationSettings" -> {
+                        val helper = manufacturerPermissionHelper ?: ManufacturerPermissionHelper(this@MainActivity)
+                        result.success(helper.openNotificationSettings())
+                    }
+                    "openAppDetailsSettings" -> {
+                        val helper = manufacturerPermissionHelper ?: ManufacturerPermissionHelper(this@MainActivity)
+                        result.success(helper.openAppDetailsSettings())
                     }
                     "clearAlarmPayload" -> {
                         latestAlarmPayload = null
