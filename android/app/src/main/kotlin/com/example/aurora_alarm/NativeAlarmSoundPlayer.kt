@@ -23,6 +23,14 @@ object NativeAlarmSoundPlayer {
 
     private const val TAG = "NativeAlarmSoundPlayer"
 
+    /**
+     * Volume attenuation factor applied ONLY in DEBUG mode for developer comfort
+     * during development and testing (e.g. testing late at night at home).
+     * 0.05f represents 5% of maximum volume.
+     * In RELEASE mode, full volume (1.0f) is always enforced.
+     */
+    const val DEBUG_ALARM_VOLUME = 0.05f
+
     private var mediaPlayer: MediaPlayer? = null
     private var vibrator: Vibrator? = null
     private var wakeLock: PowerManager.WakeLock? = null
@@ -32,6 +40,14 @@ object NativeAlarmSoundPlayer {
 
     var currentAlarmId: Int? = null
         private set
+
+    /**
+     * Checks whether the application is running in DEBUG mode.
+     */
+    fun isDebugBuild(context: Context): Boolean {
+        val flagDebuggable = (context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
+        return BuildConfig.DEBUG || flagDebuggable
+    }
 
     @Synchronized
     fun start(
@@ -102,7 +118,13 @@ object NativeAlarmSoundPlayer {
                 }
 
                 isLooping = true
-                setVolume(1.0f, 1.0f)
+                val targetVolume = if (isDebugBuild(context)) {
+                    Log.i(TAG, "DEBUG build detected: reducing alarm volume to ${(DEBUG_ALARM_VOLUME * 100).toInt()}% ($DEBUG_ALARM_VOLUME) for testing comfort.")
+                    DEBUG_ALARM_VOLUME
+                } else {
+                    1.0f
+                }
+                setVolume(targetVolume, targetVolume)
                 prepare()
                 start()
             }
