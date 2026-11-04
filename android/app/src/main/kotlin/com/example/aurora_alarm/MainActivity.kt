@@ -71,8 +71,15 @@ class MainActivity : FlutterActivity() {
                     }
                     "canUseFullScreenIntent" -> {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
-                            result.success(nm?.canUseFullScreenIntent() ?: true)
+                            try {
+                                val nm = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+                                val canUse = nm?.canUseFullScreenIntent() ?: true
+                                Log.d(TAG, "canUseFullScreenIntent check: $canUse")
+                                result.success(canUse)
+                            } catch (e: Exception) {
+                                Log.e(TAG, "Error checking canUseFullScreenIntent: ${e.message}")
+                                result.success(true)
+                            }
                         } else {
                             result.success(true)
                         }
@@ -83,12 +90,26 @@ class MainActivity : FlutterActivity() {
                                 val intent = Intent(
                                     Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT,
                                     Uri.parse("package:$packageName")
-                                )
+                                ).apply {
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
                                 startActivity(intent)
                                 result.success(true)
                             } catch (e: Exception) {
-                                Log.e(TAG, "Error opening full-screen intent settings: ${e.message}")
-                                result.success(false)
+                                Log.w(TAG, "ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT not supported, falling back: ${e.message}")
+                                try {
+                                    val fallbackIntent = Intent(
+                                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                        Uri.parse("package:$packageName")
+                                    ).apply {
+                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    }
+                                    startActivity(fallbackIntent)
+                                    result.success(true)
+                                } catch (fallbackEx: Exception) {
+                                    Log.e(TAG, "Error opening app settings: ${fallbackEx.message}")
+                                    result.success(false)
+                                }
                             }
                         } else {
                             result.success(true)
